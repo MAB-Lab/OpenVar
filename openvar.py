@@ -8,7 +8,7 @@ class VCF:
 		self.file_path  = os.path.join(data_dir, file_name)
 		self.study_name = study_name
 
-	def check(self, ):
+	def check(self):
 		# check genome version - convert?
 		# check ref-alt allele order GNOMAD
 		# check 'chr' in chrome names
@@ -16,19 +16,20 @@ class VCF:
 		# return proper feedback in case of non-compliance
 		pass
 
-	def check_alt_ref_alleles(self, ):
+	def check_alt_ref_alleles(self):
 		pass
 		
-	def convert_hg19_to_hg38(self, ):
+	def convert_hg19_to_hg38(self):
 		pass
 
-	def store(self, ):
+	def store(self):
 		# store sanitized vcf in db
 		pass
 
 
 class OpenVar:
 	def __init__(self, snpeff_path, vcf, snpeff_build = 'GRCh38.95_OP1.6'):
+		self.snpeff_path  = snpeff_path
 		self.snpeff_jar   = os.path.join(snpeff_path, 'snpEff.jar')
 		self.snpsift_jar  = os.path.join(snpeff_path, 'SnpSift.jar')
 		self.snpeff_build = snpeff_build
@@ -37,9 +38,11 @@ class OpenVar:
 	def run_snpeff_pipe(self):
 		snpEff_logfile = os.path.join(self.vcf.data_dir, '{}_snpEff.log'.format(self.vcf.study_name))
 		snpeff_cmd     = self.get_snpeff_cmd()
-		snpeff_subproc = subprocess.Popen(snpeff_cmd.split(), shell=False, stdout=open(snpEff_logfile, 'w'))
+		print('Running SnpEff...')
+		snpeff_subproc = subprocess.Popen(snpeff_cmd.split(), shell=True, stdout=open(snpEff_logfile, 'w'))
 		snpeff_subproc.wait()
 
+		print('Formating output...')
 		cat_cmd      = self.get_cat_cmd()
 		perl_cmd     = self.get_perl_cmd()
 		cat_subproc  = subprocess.Popen(cat_cmd.split(), shell=False, stdout=subprocess.PIPE)
@@ -51,7 +54,11 @@ class OpenVar:
 		snpsift_subproc    = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
 
 		perl_subproc.stdout.close()
-		snpsift_subproc.wait()		
+		snpsift_subproc.wait()
+
+		#TODO: catch exceptions
+
+		return True
 
 	def get_snpeff_cmd(self):
 		cmd = 'java -Xmx12g -jar {snpeff_jar} -v {build} {vcf_path}'.format(
