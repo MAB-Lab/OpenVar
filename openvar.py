@@ -28,10 +28,10 @@ class VCF:
 
 
 class OpenVar:
-	def __init__(self, snpeff_path, vcf, genome_build):
+	def __init__(self, snpeff_path, vcf, snpeff_build = 'GRCh38.95_OP1.6'):
 		self.snpeff_jar   = os.path.join(snpeff_path, 'snpEff.jar')
 		self.snpsift_jar  = os.path.join(snpeff_path, 'SnpSift.jar')
-		self.snpeff_build = 'GRCh38.95_refAlt'
+		self.snpeff_build = snpeff_build
 		self.vcf = vcf
 
 	def run_snpeff_pipe(self):
