@@ -36,22 +36,22 @@ class OpenVar:
 
 	def run_snpeff_pipe(self):
 		snpEff_logfile = os.path.join(vcf.data_dir, '{}_snpEff.log'.format(vcf.study_name))
-		snpeff_cmd  = self.get_snpeff_cmd()
+		snpeff_cmd     = self.get_snpeff_cmd()
 		snpeff_subproc = subprocess.Popen(snpeff_cmd.split(), shell=False, stdout=open(snpEff_logfile, 'w'))
 		snpeff_subproc.wait()
 
-		cat_cmd  = self.get_cat_cmd()
-		perl_cmd = self.get_perl_cmd()
+		cat_cmd      = self.get_cat_cmd()
+		perl_cmd     = self.get_perl_cmd()
 		cat_subproc  = subprocess.Popen(cat_cmd.split(), shell=False, stdout=subprocess.PIPE)
 		perl_subproc = subprocess.Popen(perl_cmd.split(), shell=False, stdin=cat_subproc.stdout, stdout=subprocess.PIPE)
 		cat_subproc.stdout.close()
 
-		snpsift_cmd  = self.get_snpsift_cmd()
+		snpsift_cmd        = self.get_snpsift_cmd()
 		annOnePerLine_file = os.path.join(vcf.data_dir, '{}_annOnePerLine.tsv'.format(vcf.study_name))
-		snpsift_subproc = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
+		snpsift_subproc    = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
 
-	    perl_subproc.stdout.close()
-	    snpsift_subproc.wait()		
+		perl_subproc.stdout.close()
+		snpsift_subproc.wait()		
 
 	def get_snpeff_cmd(self):
 		cmd = 'java -Xmx12g -jar {snpeff_jar} -v {build} {vcf_path}'.format(
