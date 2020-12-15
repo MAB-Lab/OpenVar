@@ -39,7 +39,7 @@ class OpenVar:
 		snpEff_logfile = os.path.join(self.vcf.data_dir, '{}_snpEff.log'.format(self.vcf.study_name))
 		snpeff_cmd     = self.get_snpeff_cmd()
 		print('Running SnpEff...')
-		snpeff_subproc = subprocess.Popen(snpeff_cmd.split(), shell=True, stdout=open(snpEff_logfile, 'w'))
+		snpeff_subproc = subprocess.Popen(snpeff_cmd.split(), shell=False, stdout=open(snpEff_logfile, 'w'))
 		snpeff_subproc.wait()
 
 		print('Formating output...')
