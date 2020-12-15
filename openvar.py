@@ -82,8 +82,8 @@ class OPVReport:
 	def __init__(self, opv):
 		pass
 
-	def write_tabular(self, ):
+	def write_tabular(self):
 		pass
 
-	def write_html(self, ):
+	def write_html(self):
 		pass
