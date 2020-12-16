@@ -47,7 +47,7 @@ class OpenVar:
 			)
 		with open(snpEff_logfile, 'w') as f:
 			for l in iter(snpeff_subproc.stdout.readline, b''):
-				f.write(l)
+				f.write(l.decode())
 		snpeff_subproc.wait()
 
 		print('Formating output...')
