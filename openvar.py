@@ -35,10 +35,12 @@ class OpenVar:
 		self.snpeff_build = snpeff_build
 		self.vcf = vcf
 
-	def run_snpeff_pipe(self):
+	def run_snpeff_pipe(self, verbose=False):
 		snpEff_logfile = os.path.join(self.vcf.data_dir, '{}_snpEff.log'.format(self.vcf.study_name))
 		snpeff_cmd     = self.get_snpeff_cmd()
 		print('Running SnpEff...')
+		if verbose:
+			print(snpeff_cmd)
 		snpeff_subproc = subprocess.Popen(
 			snpeff_cmd.split(), 
 			shell=False, 
@@ -53,11 +55,16 @@ class OpenVar:
 		print('Formating output...')
 		cat_cmd      = self.get_cat_cmd()
 		perl_cmd     = self.get_perl_cmd()
+		if verbose:
+			print(cat_cmd)
+			print(perl_cmd)
 		cat_subproc  = subprocess.Popen(cat_cmd.split(), shell=False, stdout=subprocess.PIPE)
 		perl_subproc = subprocess.Popen(perl_cmd.split(), shell=False, stdin=cat_subproc.stdout, stdout=subprocess.PIPE)
 		cat_subproc.stdout.close()
 
 		snpsift_cmd        = self.get_snpsift_cmd()
+		if verbose:
+			print(snpsift_cmd)
 		annOnePerLine_file = os.path.join(self.vcf.data_dir, '{}_annOnePerLine.tsv'.format(self.vcf.study_name))
 		snpsift_subproc    = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
 
