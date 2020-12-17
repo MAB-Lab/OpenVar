@@ -28,7 +28,7 @@ class VCF:
 		vcf_ls = []
 		with open(self.file_path, 'r') as f:
 			reader = csv.reader(f, delimiter='\t')
-			for n, row in emuerate(reader):
+			for n, row in enumerate(reader):
 				vcf_ls.append(row)
 		self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
 
