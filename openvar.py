@@ -22,11 +22,12 @@ class VCF:
 		self.file_name  = file_name
 		self.file_path  = os.path.join(data_dir, file_name)
 		self.study_name = study_name
+		self.parse_vcf()
 
 	def parse_vcf(self):
 		vcf_ls = []
 		with open(self.file_path, 'r') as f:
-			reader = csv.reader(delimiter='\t')
+			reader = csv.reader(f, delimiter='\t')
 			for n, row in emuerate(reader):
 				vcf_ls.append(row)
 		self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
