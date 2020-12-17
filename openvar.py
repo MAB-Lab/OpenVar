@@ -78,8 +78,9 @@ class OpenVar:
 
 	def run_snpeff_parallel_pipe(self, nprocs=12):
 		pool = multiprocessing.Pool(processes=nprocs)
-		pool.map_async(self.run_snpeff, chrom_names)
+		pool.map(self.run_snpeff, chrom_names)
 		pool.close()
+		pool.terminate()
 		pool.join()
 		return True
 
