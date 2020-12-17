@@ -84,6 +84,7 @@ class OpenVar:
 	def run_snpeff(self, chrom_name, verbose=False):
 		snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
 		vcf_path           = os.path.join(self.vcf.vcf_split_paths[chrom_name])
+		vcf_ann_path       = vcf_path.replace('.vcf', '.ann.vcf')
 		snpEff_logfile     = os.path.join(self.vcf.data_dir, '{}_chr{}_snpEff.log'.format(self.vcf.study_name, chrom_name))
 
 		snpeff_cmd     = self.get_snpeff_cmd(snpEff_chrom_build, vcf_path)
@@ -96,15 +97,15 @@ class OpenVar:
 			snpeff_cmd.split(), 
 			shell=False, 
 			stdout=subprocess.PIPE,
-			stderr=subprocess.STDOUT
+			stderr=open(snpEff_logfile, 'w')
 			)
-		with open(snpEff_logfile, 'w') as f:
+		with open(vcf_ann_path, 'w') as f:
 			for l in iter(snpeff_subproc.stdout.readline, b''):
 				f.write(l.decode())
 		snpeff_subproc.wait()
 
 		
-		cat_cmd = self.get_cat_cmd()
+		cat_cmd = self.get_cat_cmd(vcf_ann_path)
 		perl_cmd = self.get_perl_cmd()
 		if verbose:
 			print('Formating output...')
@@ -123,8 +124,6 @@ class OpenVar:
 		perl_subproc.stdout.close()
 		snpsift_subproc.wait()
 
-		#TODO: catch exceptions
-
 		return True
 
 	def get_snpeff_cmd(self, snpEff_chrom_build, vcf_path):
@@ -135,8 +134,8 @@ class OpenVar:
 			)
 		return cmd
 
-	def get_cat_cmd(self):
-		cmd = 'cat {output_vcf}'.format(output_vcf=self.vcf.file_name.replace('.vcf', '.ann.vcf'))
+	def get_cat_cmd(self, vcf_ann_path):
+		cmd = 'cat {output_vcf}'.format(output_vcf=vcf_ann_path)
 		return cmd
 
 	def get_perl_cmd(self):
