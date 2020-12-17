@@ -54,7 +54,7 @@ class VCF:
 				'{study_name}_{chrom_name}.vcf'.format(study_name=self.study_name, chrom_name=chrom_name)
 				)
 			with open(self.vcf_split_paths[chrom_name], 'w') as vcf_file:
-				writer = csv.writer(delimiter='\t')
+				writer = csv.writer(vcf_file, delimiter='\t')
 				for row in rows:
 					writer.writerow(row)
 		return True
