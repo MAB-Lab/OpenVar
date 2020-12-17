@@ -47,7 +47,7 @@ class VCF:
 
 	def split_by_chrom(self):
 		self.vcf_split_paths = {}
-		for chrom_name, rows in itt.(self.vcf_ls):
+		for chrom_name, rows in itt.groupby(self.vcf_ls, key=lambda x: x[0]):
 			self.vcf_split_paths[chrom_name] = os.path.join(
 				self.vcf_splits_dir,
 				'{study_name}_{chrom_name}.vcf'.format(study_name=self.study_name, chrom_name=chrom_name)
