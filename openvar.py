@@ -79,6 +79,8 @@ class OpenVar:
 	def run_snpeff_parallel_pipe(self, nprocs=12):
 		pool = multiprocessing.Pool(processes=nprocs)
 		pool.map_async(self.run_snpeff, chrom_names)
+		pool.close()
+		pool.join()
 		return True
 
 	def run_snpeff(self, chrom_name, verbose=False):
@@ -150,6 +152,9 @@ class OpenVar:
 			)
 		return cmd
 
+class SnpEffParser:
+	def __init__():
+		pass
 
 class OPVReport:
 	def __init__(self, opv):
