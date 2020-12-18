@@ -88,7 +88,7 @@ class OpenVar:
 
 	def run_snpeff(self, chrom_name, verbose=False):
 		snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
-		if chrom_name not in vcf_split_paths:
+		if chrom_name not in self.vcf.vcf_split_paths:
 			print('no variants in chromosome {}'.format(chrom_name))
 			return True
 		vcf_path           = os.path.join(self.vcf.vcf_split_paths[chrom_name])
