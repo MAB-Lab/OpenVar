@@ -35,7 +35,7 @@ class VCF:
 	def check(self):
 		# check genome version - convert?
 		# check ref-alt allele order GNOMAD
-		# check 'chr' in chrome names
+		# check chrome names
 
 		# return proper feedback in case of non-compliance
 		pass
@@ -126,7 +126,12 @@ class OpenVar:
 		snpsift_cmd = self.get_snpsift_cmd()
 		if verbose:
 			print(snpsift_cmd)
-		annOnePerLine_file = os.path.join(self.vcf.data_dir, '{}_annOnePerLine.tsv'.format(self.vcf.study_name))
+		annOnePerLine_file = os.path.join(
+			self.vcf.data_dir, '{study_name}_{chrom_name}_annOnePerLine.tsv'.format(
+				study_name=self.vcf.study_name,
+				chrom_name=chrom_name
+				)
+			)
 		snpsift_subproc    = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
 
 		perl_subproc.stdout.close()
@@ -159,8 +164,27 @@ class OpenVar:
 		return cmd
 
 class SnpEffParser:
-	def __init__():
-		pass
+	def __init__(self, opv):
+		self.opv = opv
+
+	def parse_annOnePerLine(self, ):
+        annOnePerLines = []
+        for f in os.listdir(self.opv.vcf_splits_dir):
+            fpath = os.path.join(self.results_dir, f)
+            if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
+                annOnePerLines.append(fpath)
+        lines = []
+        for annOnePerLine in annOnePerLines:
+            with open(annOnePerLine, 'r') as f:
+                for n,l in enumerate(f):
+                    ls = l.strip().split('\t')
+                    if n==0:
+                        keys=ls
+                        continue
+                    line=dict(zip(keys, ls))
+                    line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
+                    lines.append(line)
+        self.annOnePerLine = lines
 
 class OPVReport:
 	def __init__(self, opv):
