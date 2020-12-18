@@ -89,7 +89,7 @@ class OpenVar:
 	def run_snpeff(self, chrom_name, verbose=False):
 		snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
 		if chrom_name not in self.vcf.vcf_split_paths:
-			print('no variants in chromosome {}'.format(chrom_name))
+			print('no variant in chromosome {}'.format(chrom_name))
 			return True
 		vcf_path           = os.path.join(self.vcf.vcf_split_paths[chrom_name])
 		vcf_ann_path       = vcf_path.replace('.vcf', '.ann.vcf')
@@ -163,14 +163,10 @@ class OpenVar:
 			)
 		return cmd
 
-class SnpEffParser:
-	def __init__(self, opv):
-		self.opv = opv
-
 	def parse_annOnePerLine(self, ):
 		annOnePerLines = []
-		for f in os.listdir(self.opv.data_dir):
-		    fpath = os.path.join(self.opv.data_dir, f)
+		for f in os.listdir(self.data_dir):
+		    fpath = os.path.join(self.data_dir, f)
 		    if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
 		        annOnePerLines.append(fpath)
 		lines = []
@@ -185,6 +181,7 @@ class SnpEffParser:
 		            line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
 		            lines.append(line)
 		self.annOnePerLine = lines
+
 
 class OPVReport:
 	def __init__(self, opv):
