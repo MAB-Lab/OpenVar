@@ -168,23 +168,23 @@ class SnpEffParser:
 		self.opv = opv
 
 	def parse_annOnePerLine(self, ):
-        annOnePerLines = []
-        for f in os.listdir(self.opv.data_dir):
-            fpath = os.path.join(self.opv.data_dir, f)
-            if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
-                annOnePerLines.append(fpath)
-        lines = []
-        for annOnePerLine in annOnePerLines:
-            with open(annOnePerLine, 'r') as f:
-                for n,l in enumerate(f):
-                    ls = l.strip().split('\t')
-                    if n==0:
-                        keys=ls
-                        continue
-                    line=dict(zip(keys, ls))
-                    line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
-                    lines.append(line)
-        self.annOnePerLine = lines
+		annOnePerLines = []
+		for f in os.listdir(self.opv.data_dir):
+		    fpath = os.path.join(self.opv.data_dir, f)
+		    if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
+		        annOnePerLines.append(fpath)
+		lines = []
+		for annOnePerLine in annOnePerLines:
+		    with open(annOnePerLine, 'r') as f:
+		        for n,l in enumerate(f):
+		            ls = l.strip().split('\t')
+		            if n==0:
+		                keys=ls
+		                continue
+		            line=dict(zip(keys, ls))
+		            line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
+		            lines.append(line)
+		self.annOnePerLine = lines
 
 class OPVReport:
 	def __init__(self, opv):
