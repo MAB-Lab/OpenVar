@@ -169,8 +169,8 @@ class SnpEffParser:
 
 	def parse_annOnePerLine(self, ):
         annOnePerLines = []
-        for f in os.listdir(self.opv.vcf_splits_dir):
-            fpath = os.path.join(self.results_dir, f)
+        for f in os.listdir(self.opv.data_dir):
+            fpath = os.path.join(self.opv.data_dir, f)
             if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
                 annOnePerLines.append(fpath)
         lines = []
