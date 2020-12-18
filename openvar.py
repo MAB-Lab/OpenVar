@@ -163,10 +163,10 @@ class OpenVar:
 			)
 		return cmd
 
-	def parse_annOnePerLine(self, ):
+	def parse_annOnePerLine(self):
 		annOnePerLines = []
-		for f in os.listdir(self.data_dir):
-		    fpath = os.path.join(self.data_dir, f)
+		for f in os.listdir(self.vcf.data_dir):
+		    fpath = os.path.join(self.vcf.data_dir, f)
 		    if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
 		        annOnePerLines.append(fpath)
 		lines = []
