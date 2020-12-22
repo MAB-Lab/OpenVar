@@ -172,15 +172,28 @@ class OpenVar:
 class OPVReport:
 	def __init__(self, opv):
 		self.opv = opv
+		self.vcf = opv.vcf
 		self.data_dir = self.opv.vcf.data_dir
 		self.study_name = self.opv.vcf.study_name
+		self.parse_annOnePerLine()
 
 	def aggregate_annotated_vcf(self):
-		pass
+		split_ann_vcfs = []
+		for f in os.listdir(self.opv.vcf.vcf_splits_dir):
+		    fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
+		    if os.path.isfile(fpath) and '.ann.vcf' in fpath:
+		        split_ann_vcfs.append(fpath)
+
+		ann_vcf_file_path = os.path.join(self.data_dir, self.file_name.replace('.vcf', '.ann.vcf'))        
+        with open(ann_vcf_file_path, 'w') as ann_vcf_file:
+        	writer = csv.writer(ann_vcf_file, delimiter='\t')
+			for split_ann_vcf_file in split_ann_vcfs:
+				with open(split_ann_vcf_file, 'r') as fread:
+					reader = csv.reader(fread, delimiter='\t')
+					for row in reader:
+						writer.writerow(row)
 
 	def write_tabular(self):
-		if not hasattr(self, 'annOnePerLine'):
-			self.parse_annOnePerLine()
 		annOnePerLine_file_path = os.path.join(self.data_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
 		cols = self.annOnePerLine[0].keys()
 		with open(annOnePerLine_file_path, 'r') as tab_file:
@@ -193,7 +206,16 @@ class OPVReport:
 		pass
 
 	def analyze_all_variants(self):
-		pass
+		snps = []
+		for snp in self.annOnePerLines:
+			var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
+			snps.append(
+				(var_name, snp['ANN[*].FEATUREID'], snp['ANN[*].HGVS_P'], snp['ANN[*].HGVS_C'], snp['ANN[*].IMPACT'], snp['ANN[*].ERRORS'])
+				)
+		analyzed_variants = []
+		for snp in itt.groupby(snps, key=lambda x: x[0]):
+			analyzed_variants.append(self.analyze_variant(*snp))
+		self.analyzed_variants = analyzed_variants
 
 	def parse_annOnePerLine(self):
 		annOnePerLines = []
@@ -214,7 +236,7 @@ class OPVReport:
 		            lines.append(line)
 		self.annOnePerLine = lines
 
-	def analyze_variant(variant, effs, debug=False):
+	def analyze_variant(self, variant, effs, debug=False):
 	    atts = {
 	        'hg38_name'      : variant,
 	        'in_ref'         : 'false',
