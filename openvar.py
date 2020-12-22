@@ -289,12 +289,12 @@ class OPVReport:
 	    return atts
 
 	def is_synonymous(hgvs_p):
-    try:
-        hgvs_p = hgvs_p.split('.')[-1]
-        return hgvs_p[:3] == hgvs_p[-3:]
-    except:
-	        return False
+		try:
+		    hgvs_p = hgvs_p.split('.')[-1]
+		    return hgvs_p[:3] == hgvs_p[-3:]
+		except:
+		        return False
 	
 	def parse_feat_id(feat_id, gene_dict=None):
-	    trxpt, acc = feat_id.split('^')
-	    return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': op_prot_gene[acc]}
+		trxpt, acc = feat_id.split('^')
+		return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': op_prot_gene[acc]}
