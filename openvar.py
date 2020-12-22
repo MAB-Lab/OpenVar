@@ -1,9 +1,20 @@
 import os
+import sys
 import csv
 import subprocess
 import multiprocessing
 import itertools as itt
 import pickle
+
+maxInt = sys.maxsize
+while True:
+    try:
+        csv.field_size_limit(maxInt)
+        break
+    except OverflowError:
+        maxInt = int(maxInt/10)
+
+csv.field_size_limit(sys.maxsize)
 chrom_names = set([str(x) for x in range(1,23)] + ['X', 'Y', 'MT'])
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
 prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
@@ -203,6 +214,9 @@ class OPVReport:
 				writer.writerow(row.values())
 
 	def write_json_report(self):
+		pass
+
+	def compute_sum_stats(self):
 		pass
 
 	def analyze_all_variants(self):
