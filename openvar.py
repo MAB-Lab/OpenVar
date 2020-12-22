@@ -184,7 +184,7 @@ class OPVReport:
 		    if os.path.isfile(fpath) and '.ann.vcf' in fpath:
 		        split_ann_vcfs.append(fpath)
 
-		ann_vcf_file_path = os.path.join(self.data_dir, self.file_name.replace('.vcf', '.ann.vcf'))        
+		ann_vcf_file_path = os.path.join(self.data_dir, self.vcf.file_name.replace('.vcf', '.ann.vcf'))        
 		with open(ann_vcf_file_path, 'w') as ann_vcf_file:
 			writer = csv.writer(ann_vcf_file, delimiter='\t')
 			for split_ann_vcf_file in split_ann_vcfs:
