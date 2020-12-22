@@ -196,7 +196,7 @@ class OPVReport:
 	def write_tabular(self):
 		annOnePerLine_file_path = os.path.join(self.data_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
 		cols = self.annOnePerLine[0].keys()
-		with open(annOnePerLine_file_path, 'r') as tab_file:
+		with open(annOnePerLine_file_path, 'w') as tab_file:
 			writer = csv.writer(tab_file, delimiter='\t')
 			witer.writerow(cols)
 			for row in self.annOnePerLine:
@@ -207,7 +207,7 @@ class OPVReport:
 
 	def analyze_all_variants(self):
 		snps = []
-		for snp in self.annOnePerLines:
+		for snp in self.annOnePerLine:
 			var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
 			snps.append(
 				(var_name, snp['ANN[*].FEATUREID'], snp['ANN[*].HGVS_P'], snp['ANN[*].HGVS_C'], snp['ANN[*].IMPACT'], snp['ANN[*].ERRORS'])
