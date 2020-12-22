@@ -3,10 +3,10 @@ import csv
 import subprocess
 import multiprocessing
 import itertools as itt
-
+import pickle
 chrom_names = set([str(x) for x in range(1,23)] + ['X', 'Y', 'MT'])
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
-
+prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
 
 class VCF:
 	def __init__(self, data_dir, file_name, study_name):
@@ -298,4 +298,4 @@ def is_synonymous(hgvs_p):
 
 def parse_feat_id(feat_id, gene_dict=None):
 	trxpt, acc = feat_id.split('^')
-	return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': op_prot_gene[acc]}
+	return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': prot_gene_dict[acc]}
