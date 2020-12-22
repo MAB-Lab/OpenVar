@@ -35,7 +35,7 @@ class VCF:
 
 	def run_all_checks(self):
 		# check ref-alt allele order (GNOMAD)
-		for snp in self.vcf_ls:
+		#for snp in self.vcf_ls:
 
 		# check genome version - convert?
 		
@@ -202,7 +202,7 @@ class OPVReport:
 			for row in self.annOnePerLine:
 				witer.writerow(row.values())
 
-	def write_json(self):
+	def write_json_report(self):
 		pass
 
 	def analyze_all_variants(self):
