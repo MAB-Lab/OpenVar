@@ -5,6 +5,7 @@ import multiprocessing
 import itertools as itt
 
 chrom_names = set([str(x) for x in range(1,23)] + ['X', 'Y', 'MT'])
+impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
 
 
 class VCF:
