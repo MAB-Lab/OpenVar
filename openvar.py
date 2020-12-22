@@ -6,6 +6,7 @@ import itertools as itt
 
 chrom_names = set([str(x) for x in range(1,23)] + ['X', 'Y', 'MT'])
 
+
 class VCF:
 	def __init__(self, data_dir, file_name, study_name):
 		self.data_dir   = data_dir
@@ -32,15 +33,19 @@ class VCF:
 				vcf_ls.append(row)
 		self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
 
-	def check(self):
+	def run_all_checks(self):
+		# check ref-alt allele order (GNOMAD)
+		for snp in self.vcf_ls:
+
 		# check genome version - convert?
-		# check ref-alt allele order GNOMAD
+		
 		# check chrome names
 
 		# return proper feedback in case of non-compliance
 		pass
 
-	def check_alt_ref_alleles(self):
+	def check_alt_ref_allele(self):
+
 		pass
 		
 	def convert_hg19_to_hg38(self):
@@ -127,7 +132,7 @@ class OpenVar:
 		if verbose:
 			print(snpsift_cmd)
 		annOnePerLine_file = os.path.join(
-			self.vcf.data_dir, '{study_name}_{chrom_name}_annOnePerLine.tsv'.format(
+			self.vcf.vcf_splits_dir, '{study_name}_{chrom_name}_annOnePerLine.tsv'.format(
 				study_name=self.vcf.study_name,
 				chrom_name=chrom_name
 				)
@@ -163,10 +168,37 @@ class OpenVar:
 			)
 		return cmd
 
+
+class OPVReport:
+	def __init__(self, opv):
+		self.opv = opv
+		self.data_dir = self.opv.vcf.data_dir
+		self.study_name = self.opv.vcf.study_name
+
+	def aggregate_annotated_vcf(self):
+		pass
+
+	def write_tabular(self):
+		if not hasattr(self, 'annOnePerLine'):
+			self.parse_annOnePerLine()
+		annOnePerLine_file_path = os.path.join(self.data_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
+		cols = self.annOnePerLine[0].keys()
+		with open(annOnePerLine_file_path, 'r') as tab_file:
+			writer = csv.writer(tab_file, delimiter='\t')
+			witer.writerow(cols)
+			for row in self.annOnePerLine:
+				witer.writerow(row.values())
+
+	def write_json(self):
+		pass
+
+	def analyze_all_variants(self):
+		pass
+
 	def parse_annOnePerLine(self):
 		annOnePerLines = []
-		for f in os.listdir(self.vcf.data_dir):
-		    fpath = os.path.join(self.vcf.data_dir, f)
+		for f in os.listdir(self.opv.vcf.vcf_splits_dir):
+		    fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
 		    if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
 		        annOnePerLines.append(fpath)
 		lines = []
@@ -182,13 +214,65 @@ class OpenVar:
 		            lines.append(line)
 		self.annOnePerLine = lines
 
+	def analyze_variant(variant, effs, debug=False):
+	    atts = {
+	        'hg38_name'      : variant,
+	        'in_ref'         : 'false',
+	        'in_alt'         : 'false',
+	        'ref_max_impact' : -1,
+	        'alt_max_impact' : -1,
+	        'ref_trxpt_acc'  : 'null',
+	        'ref_prot_acc'   : 'null',
+	        'alt_trxpt_acc'  : 'null',
+	        'alt_prot_acc'   : 'null',
+	        'ref_hgvs_p'     : 'null',
+	        'ref_hgvs_c'     : 'null',
+	        'alt_hgvs_p'     : 'null',
+	        'alt_hgvs_c'     : 'null',
+	        'ref_errs'       : 'null',
+	        'alt_errs'       : 'null',
+	        'gene'           : 'null'
+	           }
+	    for eff in effs:
+	        feat_id, hgvs_p, hgvs_c, impact, errs = eff[1:]
+	        if debug:
+	            print('-----------')
+	            print(feat_id, hgvs_p, hgvs_c, impact, errs)
+	            print("hgvs_p: "+hgvs_p, "'^' in feat_id: "+str('^' in feat_id),"max_impact: "+str(impact_levels[impact] > atts['alt_max_impact']))
+	        if hgvs_p:
+	            if 'ENST' in feat_id and '@' in feat_id:
+	                atts['in_ref'] = 'true'
+	                if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
+	                    atts.update({
+	                        'ref_trxpt_acc'  : feat_id,
+	                        'ref_hgvs_p'     : hgvs_p,
+	                        'ref_hgvs_c'     : hgvs_c,
+	                        'ref_errs'       : errs,
+	                        'ref_max_impact' : impact_levels[impact]
+	                    })
+	            elif '^' in feat_id:
+	                atts['in_alt'] = 'true'
+	                if impact_levels[impact] and impact_levels[impact] > atts['alt_max_impact']:
+	                    alt_feat_dict = parse_feat_id(feat_id)
+	                    atts.update(alt_feat_dict)
+	                    atts.update({
+	                        'alt_hgvs_p'     : hgvs_p,
+	                        'alt_hgvs_c'     : hgvs_c,
+	                        'alt_errs'       : errs,
+	                        'alt_max_impact' : impact_levels[impact],
+	                    })
+	    atts.update({
+	        'hg38_pos'        : int(variant.split('_')[1]),
+	    })
+	    return atts
 
-class OPVReport:
-	def __init__(self, opv):
-		pass
-
-	def write_tabular(self):
-		pass
-
-	def write_html(self):
-		pass
+	def is_synonymous(hgvs_p):
+    try:
+        hgvs_p = hgvs_p.split('.')[-1]
+        return hgvs_p[:3] == hgvs_p[-3:]
+    except:
+	        return False
+	
+	def parse_feat_id(feat_id, gene_dict=None):
+	    trxpt, acc = feat_id.split('^')
+	    return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': op_prot_gene[acc]}
