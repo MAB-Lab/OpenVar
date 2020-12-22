@@ -8,7 +8,7 @@ chrom_names = set([str(x) for x in range(1,23)] + ['X', 'Y', 'MT'])
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
 prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
 
-class VCF:
+class SeqStudy:
 	def __init__(self, data_dir, file_name, study_name):
 		self.data_dir   = data_dir
 		if not os.path.exists(self.data_dir):
@@ -78,7 +78,6 @@ class OpenVar:
 
 		# make dict annotation -> build
 		self.snpeff_build = 'GRCh38.95_refAlt_chr{chrom_name}'
-
 		self.vcf = vcf
 		
 
@@ -199,9 +198,9 @@ class OPVReport:
 		cols = self.annOnePerLine[0].keys()
 		with open(annOnePerLine_file_path, 'w') as tab_file:
 			writer = csv.writer(tab_file, delimiter='\t')
-			witer.writerow(cols)
+			writer.writerow(cols)
 			for row in self.annOnePerLine:
-				witer.writerow(row.values())
+				writer.writerow(row.values())
 
 	def write_json_report(self):
 		pass
