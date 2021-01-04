@@ -251,34 +251,30 @@ class OPVReport:
 		self.annOnePerLine = lines
 
 	def analyze_variant(self, variant, effs, debug=False):
-	    atts = {
-	        'hg38_name'      : variant,
-	        'in_ref'         : 'false',
-	        'in_alt'         : 'false',
-	        'ref_max_impact' : -1,
-	        'alt_max_impact' : -1,
-	        'ref_trxpt_acc'  : 'null',
-	        'ref_prot_acc'   : 'null',
-	        'alt_trxpt_acc'  : 'null',
-	        'alt_prot_acc'   : 'null',
-	        'ref_hgvs_p'     : 'null',
-	        'ref_hgvs_c'     : 'null',
-	        'alt_hgvs_p'     : 'null',
-	        'alt_hgvs_c'     : 'null',
-	        'ref_errs'       : 'null',
-	        'alt_errs'       : 'null',
-	        'gene'           : 'null'
-	           }
-	    for eff in effs:
-	        feat_id, hgvs_p, hgvs_c, impact, errs = eff[1:]
-	        if debug:
-	            print('-----------')
-	            print(feat_id, hgvs_p, hgvs_c, impact, errs)
-	            print("hgvs_p: "+hgvs_p, "'^' in feat_id: "+str('^' in feat_id),"max_impact: "+str(impact_levels[impact] > atts['alt_max_impact']))
-	        if hgvs_p:
-	            if 'ENST' in feat_id and '@' in feat_id:
-	                atts['in_ref'] = 'true'
-	                if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
+		atts = {
+			'hg38_name'      : variant,
+			'in_ref'         : 'false',
+			'in_alt'         : 'false',
+			'ref_max_impact' : -1,
+			'alt_max_impact' : -1,
+			'ref_trxpt_acc'  : 'null',
+			'ref_prot_acc'   : 'null',
+			'alt_trxpt_acc'  : 'null',
+			'alt_prot_acc'   : 'null',
+			'ref_hgvs_p'     : 'null',
+			'ref_hgvs_c'     : 'null',
+			'alt_hgvs_p'     : 'null',
+			'alt_hgvs_c'     : 'null',
+			'ref_errs'       : 'null',
+			'alt_errs'       : 'null',
+			'gene'           : 'null'
+		}
+		for eff in effs:
+			feat_id, hgvs_p, hgvs_c, impact, errs = eff[1:]
+			if hgvs_p:
+				if 'ENST' in feat_id and '@' in feat_id:
+					atts['in_ref'] = 'true'
+					if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
 						ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
 						ref_prot_acc = ref_prot_acc.split('.')[0]
 						gene = prot_gene_dict[ref_prot_acc]
@@ -291,21 +287,21 @@ class OPVReport:
 							'ref_errs'       : errs,
 							'ref_max_impact' : impact_levels[impact]
 						})
-	            elif '^' in feat_id:
-	                atts['in_alt'] = 'true'
-	                if impact_levels[impact] and impact_levels[impact] > atts['alt_max_impact']:
-	                    alt_feat_dict = parse_feat_id(feat_id)
-	                    atts.update(alt_feat_dict)
-	                    atts.update({
-	                        'alt_hgvs_p'     : hgvs_p,
-	                        'alt_hgvs_c'     : hgvs_c,
-	                        'alt_errs'       : errs,
-	                        'alt_max_impact' : impact_levels[impact],
-	                    })
-	    atts.update({
-	        'hg38_pos'        : int(variant.split('_')[1]),
-	    })
-	    return atts
+				elif '^' in feat_id:
+					atts['in_alt'] = 'true'
+					if impact_levels[impact] and impact_levels[impact] > atts['alt_max_impact']:
+						alt_feat_dict = parse_feat_id(feat_id)
+						atts.update(alt_feat_dict)
+						atts.update({
+							'alt_hgvs_p'     : hgvs_p,
+							'alt_hgvs_c'     : hgvs_c,
+							'alt_errs'       : errs,
+							'alt_max_impact' : impact_levels[impact],
+						})
+		atts.update({
+			'hg38_pos'        : int(variant.split('_')[1]),
+		})
+		return atts
 
 def is_synonymous(hgvs_p):
 	try:
