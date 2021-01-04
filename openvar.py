@@ -279,8 +279,13 @@ class OPVReport:
 	            if 'ENST' in feat_id and '@' in feat_id:
 	                atts['in_ref'] = 'true'
 	                if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
+	                	ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
+	                	ref_prot_acc = ref_prot_acc.split('.')[0]
+	                	gene = prot_gene_dict[ref_prot_acc]
 	                    atts.update({
-	                        'ref_trxpt_acc'  : feat_id,
+	                    	'gene'           : gene,
+	                        'ref_trxpt_acc'  : ref_trxpt_acc,
+	                        'ref_prot_acc'   : ref_prot_acc,
 	                        'ref_hgvs_p'     : hgvs_p,
 	                        'ref_hgvs_c'     : hgvs_c,
 	                        'ref_errs'       : errs,
@@ -312,7 +317,4 @@ def is_synonymous(hgvs_p):
 def parse_feat_id(feat_id, gene_dict=None):
 	if '^' in feat_id:
 		trxpt, acc = feat_id.split('^')
-	elif '@' in feat_id:
-		trxpt, acc = feat_id.split('@')
-		acc = acc.split('.')[0]
 	return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': prot_gene_dict[acc]}
