@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import json
 import subprocess
 import multiprocessing
 import itertools as itt
@@ -57,7 +58,6 @@ class SeqStudy:
 		pass
 
 	def check_alt_ref_allele(self):
-
 		pass
 		
 	def convert_hg19_to_hg38(self):
@@ -310,5 +310,9 @@ def is_synonymous(hgvs_p):
 	        return False
 
 def parse_feat_id(feat_id, gene_dict=None):
-	trxpt, acc = feat_id.split('^')
+	if '^' in feat_id:
+		trxpt, acc = feat_id.split('^')
+	elif '@' in feat_id:
+		trxpt, acc = feat_id.split('@')
+		acc = acc.split('.')[0]
 	return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': prot_gene_dict[acc]}
