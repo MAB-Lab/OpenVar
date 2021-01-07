@@ -258,7 +258,7 @@ class OPVReport:
 		plt.savefig(fname)
 
 		impact_counts = dict(zip(range(1,4), [{'alt':0, 'ref':0}, {'alt':0, 'ref':0}, {'alt':0, 'ref':0}]))
-		for snp in opvr.analyzed_variants:
+		for snp in self.analyzed_variants:
 			if snp['ref_max_impact']==-1 and snp['alt_max_impact']==-1: continue
 			if snp['ref_max_impact']>=snp['alt_max_impact']:
 				impact_counts[snp['ref_max_impact']]['ref'] += 1
