@@ -299,7 +299,7 @@ class OPVReport:
 			'Mutational hotspots on altORFs':gene_altsnp_rate,
 		}
 
-	def count_altsnp_ratio(snp_set):
+	def count_altsnp_ratio(self, snp_set):
 		cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
 		cnt_alt_snps = len(set(snp['alt_prot_acc'] for snp in snp_set if snp['in_alt']=='true' and snp['alt_max_impact']>snp['ref_max_impact']))
 		alts = list(set(snp['alt_prot_acc'] for snp in snp_set if snp['alt_prot_acc']!='null'))
