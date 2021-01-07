@@ -2,10 +2,12 @@ import os
 import sys
 import csv
 import json
+import pickle
 import subprocess
 import multiprocessing
 import itertools as itt
-import pickle
+from collections import Counter
+from matplotlib import pyplot as plt
 
 maxInt = sys.maxsize
 while True:
@@ -16,9 +18,10 @@ while True:
         maxInt = int(maxInt/10)
 
 csv.field_size_limit(sys.maxsize)
-chrom_names = set([str(x) for x in range(1,23)] + ['X', 'Y', 'MT'])
+chrom_names = [str(x) for x in range(1,23)] + ['X', 'Y', 'MT']
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
 prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
+gene_lenghts = pickle.load(open('gene_lenghts.pkl', 'rb'))
 
 class SeqStudy:
 	def __init__(self, data_dir, file_name, study_name):
@@ -213,11 +216,98 @@ class OPVReport:
 			for row in self.annOnePerLine:
 				writer.writerow(row.values())
 
-	def write_json_report(self):
-		pass
+	def compute_summary_stats(self):
+		# overall summary
+		prot_counts = {
+			'alt' :len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
+			'iso' :len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'II_' in snp['alt_prot_acc'])),
+			'ref' :len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants))
+		}
 
-	def compute_sum_stats(self):
-		pass
+		# chrom level
+		snp_set = set([snp['hg38_name'] for snp in self.analyzed_variants])
+		snps_per_chroms = Counter([snp.split('_')[0] for snp in snp_set])
+		snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names]
+
+		# gene level
+		gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
+		gene_snp_rate = {gene:len(list(grp))*1000/gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+		gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
+
+		genes, rates = zip(*gene_snp_rate[:10]) # top ten
+
+		# protein level
+		count_higest = {
+			'alt':sum([snp['alt_max_impact']>snp['ref_max_impact'] for snp in self.analyzed_variants]),
+			'ref':sum([snp['ref_max_impact']>snp['alt_max_impact'] for snp in self.analyzed_variants])
+		}
+
+		impacts = {
+			'ref_all':[x['ref_max_impact'] for x in self.analyzed_variants if x['ref_max_impact']>-1],
+			'max_all':[max([snp['alt_max_impact'], snp['ref_max_impact']]) for snp in self.analyzed_variants if snp['alt_max_impact']>-1 or snp['ref_max_impact']>-1],
+		}
+
+		max_all = dict(Counter(impacts['max_all']))
+		ref_all = dict(Counter(impacts['ref_all']))
+		fc = {i:max_all[i]/ref_all[i] for i in range(1,4)}
+		plt.bar(range(1,4), [fc[i] for i in range(1,4)])
+		plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
+		plt.xlabel('Impact Levels')
+		plt.ylabel('Fold Change')
+		fname = os.path.join(self.data_dir, 'impact_foldchange.svg')
+		plt.savefig(fname)
+
+		impact_counts = dict(zip(range(1,4), [{'alt':0, 'ref':0}, {'alt':0, 'ref':0}, {'alt':0, 'ref':0}]))
+		for snp in opvr.analyzed_variants:
+			if snp['ref_max_impact']==-1 and snp['alt_max_impact']==-1: continue
+			if snp['ref_max_impact']>=snp['alt_max_impact']:
+				impact_counts[snp['ref_max_impact']]['ref'] += 1
+			elif snp['alt_max_impact']>snp['ref_max_impact']:
+				impact_counts[snp['alt_max_impact']]['alt'] += 1
+
+		ref_impacts = [impact_counts[i]['ref'] for i in range(1,4)]
+		alt_impacts = [impact_counts[i]['alt'] for i in range(1,4)]
+		plt.bar(range(1,4), ref_impacts)
+		plt.bar(range(1,4), alt_impacts, bottom=ref_impacts)
+		plt.yscale('log')
+		plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
+		plt.xlabel('Impact Levels')
+		plt.ylabel('count SNPs')
+		fname = os.path.join(self.data_dir, 'var_per_impact.svg')
+		plt.savefig(fname)
+
+		# hotspots on alts
+		gene_altsnp_rate = {gene:self.count_altsnp_ratio(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+
+		self.summary = {
+			'Counts summary':{
+				'Total number of variants':len(snp_set),
+				'Total number of affected genes':len(gene_snp_rate),
+				'Total number of affected proteins':sum(prot_counts.values()),
+				'Total number of affected reference proteins':prot_counts['ref'],
+				'Total number of affected alternative proteins':prot_counts['ref'],
+				'Total number of affected novel isoforms':prot_counts['iso'],
+			},
+			'Chromosome Level':snps_per_chroms,
+			'Gene Level':gene_snp_rate,
+			'Protein Level':{
+				'Number of variants with highest impact on reference proteins':count_higest['ref'],
+				'Number of variants with highest impact on alternative proteins':count_higest['alt'],
+				'Impact Counts': impact_counts,
+				'Fold Change':fc,
+			},
+			'Mutational hotspots on altORFs':gene_altsnp_rate,
+		}
+
+	def count_altsnp_ratio(snp_set):
+		cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
+		cnt_alt_snps = len(set(snp['alt_prot_acc'] for snp in snp_set if snp['in_alt']=='true' and snp['alt_max_impact']>snp['ref_max_impact']))
+		alts = list(set(snp['alt_prot_acc'] for snp in snp_set if snp['alt_prot_acc']!='null'))
+		return {
+			'score':(cnt_alt_snps/cnt_snps)*cnt_alt_snps,
+			'ratio_higher_alt':cnt_alt_snps/cnt_snps,
+			'alts':alts
+		}
 
 	def analyze_all_variants(self):
 		snps = []
