@@ -307,7 +307,6 @@ class OPVReport:
 			data = [data[i] for i in range(1,4)]
 			plt.bar(range(1,4), data)
 			plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
-			plt.yscale('log')
 			plt.xlabel('Impact Levels')
 			plt.ylabel('Fold Change')
 			plt.savefig(fname)
