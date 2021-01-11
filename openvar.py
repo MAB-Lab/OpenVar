@@ -49,7 +49,7 @@ class SeqStudy:
 				vcf_ls.append(row)
 		self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
 
-	def run_all_checks(self):
+	def check_vcf_fromat(self):
 		# check ref-alt allele order (GNOMAD)
 		#for snp in self.vcf_ls:
 
@@ -329,6 +329,8 @@ class OPVReport:
 		cnt_alt_snps = len(set(snp['alt_prot_acc'] for snp in snp_set if snp['in_alt']=='true' and snp['alt_max_impact']>snp['ref_max_impact']))
 		alts = list(set(snp['alt_prot_acc'] for snp in snp_set if snp['alt_prot_acc']!='null'))
 		return {
+			'cnt_snps':cnt_snps,
+			'cnt_alt_snps':cnt_alt_snps,
 			'score':(cnt_alt_snps/cnt_snps)*cnt_alt_snps,
 			'ratio_higher_alt':cnt_alt_snps/cnt_snps,
 			'alts':alts
