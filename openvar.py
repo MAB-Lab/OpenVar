@@ -234,7 +234,9 @@ class OPVReport:
 		gene_snp_rate = {gene:len(list(grp))*1000/gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
 		gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
 
+		fname = os.path.join(self.data_dir, 'top_genes_var_rate.svg')
 		genes, rates = zip(*gene_snp_rate[:10]) # top ten
+		self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
 		# protein level
 		count_higest = {
@@ -250,12 +252,9 @@ class OPVReport:
 		max_all = dict(Counter(impacts['max_all']))
 		ref_all = dict(Counter(impacts['ref_all']))
 		fc = {i:max_all[i]/ref_all[i] for i in range(1,4)}
-		plt.bar(range(1,4), [fc[i] for i in range(1,4)])
-		plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
-		plt.xlabel('Impact Levels')
-		plt.ylabel('Fold Change')
 		fname = os.path.join(self.data_dir, 'impact_foldchange.svg')
-		plt.savefig(fname)
+		self.generate_bar_chart(fc, 'fold_change', fname)
+
 
 		impact_counts = dict(zip(range(1,4), [{'alt':0, 'ref':0}, {'alt':0, 'ref':0}, {'alt':0, 'ref':0}]))
 		for snp in self.analyzed_variants:
@@ -267,14 +266,9 @@ class OPVReport:
 
 		ref_impacts = [impact_counts[i]['ref'] for i in range(1,4)]
 		alt_impacts = [impact_counts[i]['alt'] for i in range(1,4)]
-		plt.bar(range(1,4), ref_impacts)
-		plt.bar(range(1,4), alt_impacts, bottom=ref_impacts)
-		plt.yscale('log')
-		plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
-		plt.xlabel('Impact Levels')
-		plt.ylabel('count SNPs')
 		fname = os.path.join(self.data_dir, 'var_per_impact.svg')
-		plt.savefig(fname)
+		self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
+
 
 		# hotspots on alts
 		gene_altsnp_rate = {gene:self.count_altsnp_ratio(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
@@ -298,6 +292,35 @@ class OPVReport:
 			},
 			'Mutational hotspots on altORFs':gene_altsnp_rate,
 		}
+
+	def generate_bar_chart(self, data, chart_type, fname):
+		if chart_type=='gene_var_rate':
+			genes, rates = data
+			plt.bar(range(1,11), rates)
+			plt.xticks(range(1,11), genes, rotation='vertical')
+			plt.xlabel('Genes')
+			plt.ylabel('SNPs per Kb')
+			plt.savefig(fname)
+
+		if chart_type=='fold_change':
+			data = [data[i] for i in range(1,4)]
+			plt.bar(range(1,4), data)
+			plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
+			plt.yscale('log')
+			plt.xlabel('Impact Levels')
+			plt.ylabel('Fold Change')
+			plt.savefig(fname)
+
+		if chart_type=='stacked_impact':
+			ref_impacts, alt_impacts = data
+			plt.bar(range(1,4), ref_impacts)
+			plt.bar(range(1,4), alt_impacts, bottom=ref_impacts)
+			plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
+			plt.yscale('log')
+			plt.xlabel('Impact Levels')
+			plt.ylabel('count SNPs')
+			plt.savefig(fname)
+
 
 	def count_altsnp_ratio(self, snp_set):
 		cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
