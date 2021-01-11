@@ -301,6 +301,7 @@ class OPVReport:
 			plt.xlabel('Genes')
 			plt.ylabel('SNPs per Kb')
 			plt.savefig(fname)
+			plt.show()
 
 		if chart_type=='fold_change':
 			data = [data[i] for i in range(1,4)]
@@ -310,6 +311,7 @@ class OPVReport:
 			plt.xlabel('Impact Levels')
 			plt.ylabel('Fold Change')
 			plt.savefig(fname)
+			plt.show()
 
 		if chart_type=='stacked_impact':
 			ref_impacts, alt_impacts = data
@@ -320,6 +322,7 @@ class OPVReport:
 			plt.xlabel('Impact Levels')
 			plt.ylabel('count SNPs')
 			plt.savefig(fname)
+			plt.show()
 
 
 	def count_altsnp_ratio(self, snp_set):
