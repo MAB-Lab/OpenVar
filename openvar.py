@@ -151,9 +151,9 @@ class OpenVar:
 			)
 		snpsift_subproc    = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
 
-		perl_subproc.stdout.close()
 		snpsift_subproc.wait()
-
+		perl_subproc.stdout.close()
+		
 		return True
 
 	def get_snpeff_cmd(self, snpEff_chrom_build, vcf_path):
@@ -323,7 +323,6 @@ class OPVReport:
 
 
 	def count_altsnp_ratio(self, snp_set):
-
 		cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
 		cnt_alt_snps = len(set(snp['alt_prot_acc'] for snp in snp_set if snp['in_alt']=='true' and snp['alt_max_impact']>snp['ref_max_impact']))
 		alts = list(set(snp['alt_prot_acc'] for snp in snp_set if snp['alt_prot_acc']!='null'))
