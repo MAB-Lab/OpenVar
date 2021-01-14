@@ -57,6 +57,7 @@ class SeqStudy:
 			snp['CHROM'] = snp['CHROM'].replace('chr', '')
 			if snp['CHROM'] not in chrom_set:
 				self.warnings.append('Unknown chromosome: {}'.format(snp['CHROM']))
+				continue
 
 			# check that position is integer
 			try:
