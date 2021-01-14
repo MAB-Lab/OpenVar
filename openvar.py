@@ -115,7 +115,7 @@ class SeqStudy:
 	def write_warnings(self):
 		fpath = os.path.join(self.results_dir, 'warnings.txt') 
 		with open(fpath, 'w') as f:
-			for warning in self.warnings():
+			for warning in self.warnings:
 				f.write(warning+'\n')
 
 class OpenVar:
