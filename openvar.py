@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import json
+import pathlib
 import pickle
 import pyfaidx
 import subprocess
@@ -502,11 +503,10 @@ def parse_feat_id(feat_id, gene_dict=None):
 	return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': prot_gene_dict[acc]}
 
 def mkdir(path):
-	if not os.path.exists(path):
-		try:
-			os.mkdir(os.path.abspath(path))
-		except:
-			print("can't create dir: {}".format(path))
+	try:
+		pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+	except:
+		print("can't create dir: {}".format(path))
 	return path
 
 def to_tsv_line(ls):
