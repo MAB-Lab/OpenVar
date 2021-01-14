@@ -387,7 +387,7 @@ class OPVReport:
 			plt.xticks(bins)
 			plt.xlabel('binned ratio of SNPs with higher impact in alt')
 			plt.ylabel('count genes')
-			#plt.savefig(fname)
+			plt.savefig(fname)
 			plt.show()
 
 	def count_altsnp_ratio(self, snp_set):
