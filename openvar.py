@@ -269,7 +269,7 @@ class OPVReport:
 		gene_snp_rate = {gene:len(list(grp))*1000/gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
 		gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
 
-		fname = os.path.join(self.results_dir, 'top_genes_var_rate.svg')
+		fname = os.path.join(self.results_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
 		genes, rates = zip(*gene_snp_rate[:10]) # top ten
 		self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
@@ -287,7 +287,7 @@ class OPVReport:
 		max_all = dict(Counter(impacts['max_all']))
 		ref_all = dict(Counter(impacts['ref_all']))
 		fc = {i:max_all[i]/ref_all[i] for i in range(1,4)}
-		fname = os.path.join(self.results_dir, 'impact_foldchange.svg')
+		fname = os.path.join(self.results_dir, '{}_impact_foldchange.svg'.format(self.study_name))
 		self.generate_bar_chart(fc, 'fold_change', fname)
 
 
@@ -301,7 +301,7 @@ class OPVReport:
 
 		ref_impacts = [impact_counts[i]['ref'] for i in range(1,4)]
 		alt_impacts = [impact_counts[i]['alt'] for i in range(1,4)]
-		fname = os.path.join(self.results_dir, 'var_per_impact.svg')
+		fname = os.path.join(self.results_dir, '{}_var_per_impact.svg'.format(self.study_name))
 		self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
 
 
@@ -328,7 +328,7 @@ class OPVReport:
 			'Mutational hotspots on altORFs':gene_altsnp_rate,
 		}
 
-		fname = os.path.join(self.results_dir, 'hotspots_barchart.svg')
+		fname = os.path.join(self.results_dir, '{}_hotspots_barchart.svg'.format(self.study_name))
 		data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
 		self.generate_bar_chart(data, 'hotspots_bar', fname)
 
