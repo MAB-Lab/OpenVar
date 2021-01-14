@@ -385,7 +385,7 @@ class OPVReport:
 			colors = plt.cm.plasma(Norm(val))
 
 			fig, ax = plt.subplots()
-			bar = ax.bar(list(range(1, (nbin + 1), 1)), list(freq_counts.values()), color = colors)
+			bar = ax.bar(list(range(1, (nbin + 1), 1)), list(gene_counts.values()), color = colors)
 			fig.colorbar(plt.cm.ScalarMappable(norm = Norm, cmap = plt.cm.plasma), ax = ax)
 			plt.xticks(bins)
 			plt.xlabel('binned ratio of SNPs with higher impact in alt')
