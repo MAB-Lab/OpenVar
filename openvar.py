@@ -504,7 +504,7 @@ def parse_feat_id(feat_id, gene_dict=None):
 def mkdir(path):
 	if not os.path.exists(path):
 		try:
-			os.mkdir(path)
+			os.mkdir(os.path.abspath(path))
 		except:
 			print("can't create dir: {}".format(path))
 	return path
