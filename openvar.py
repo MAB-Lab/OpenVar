@@ -72,6 +72,7 @@ class SeqStudy:
 		for snp in self.vcf_ls:
 			snp_line = to_tsv_line(snp)
 			snp = dict(zip(vcf_fields, snp))
+			chrom = 'chr{}'.format(snp['CHROM'])
 			ref = hg38_genome[chrom][snp['POS']-1]
 			if snp['REF'] != ref:
 				if snp['ALT'] == ref:
