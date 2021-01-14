@@ -326,6 +326,10 @@ class OPVReport:
 			'Mutational hotspots on altORFs':gene_altsnp_rate,
 		}
 
+		fname = os.path.join(self.results_dir, 'hotspots_barchart.svg')
+		data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
+		self.generate_bar_chart(data, 'hotspots_bar', fname)
+
 	def generate_bar_chart(self, data, chart_type, fname):
 		if chart_type=='gene_var_rate':
 			genes, rates = data
@@ -356,12 +360,34 @@ class OPVReport:
 			plt.savefig(fname)
 			plt.show()
 
-		if chart_type=='mutational_rate':
-			plt.bar()
-			plt.xticks()
-			plt.xlabel('')
-			plt.ylabel('')
-			plt.savefig(fname)
+		if chart_type=='hotspots_bar':
+			genes, freqs, cnt_alts = data
+			nbin, min_x, max_x = 30, 0., 1.
+			bins = list(range(1, (nbin + 1)))
+			genes_per_bin = {n:[] for n in bins}
+			altorf_counts = {n:0 for n in bins}
+			for gene, freq, cnt_alt in zip(genes, freqs, cnt_alts):
+				for n in bins:
+					left  = min_x + (n-1)*(max_x/nbin)
+					right = min_x + n*(max_x/nbin)
+					if (freq > left) and (freq <= right):
+						genes_per_bin[n].append(gene)
+						altorf_counts[n] += cnt_alt
+			            
+			gene_counts = {n:len(genes_per_bin[n]) for n in bins}
+			altorf_per_gene = {n:altorf_counts[n]/gene_counts[n] for n in bins}
+
+			Norm = plt.Normalize(min(altorf_per_gene.values()), max(altorf_per_gene.values()))
+			val = list(altorf_per_gene.values())
+			colors = plt.cm.plasma(Norm(val))
+
+			fig, ax = plt.subplots()
+			bar = ax.bar(list(range(1, (nbin + 1), 1)), list(freq_counts.values()), color = colors)
+			fig.colorbar(plt.cm.ScalarMappable(norm = Norm, cmap = plt.cm.plasma), ax = ax)
+			plt.xticks(bins)
+			plt.xlabel('binned ratio of SNPs with higher impact in alt')
+			plt.ylabel('count genes')
+			#plt.savefig(fname)
 			plt.show()
 
 	def count_altsnp_ratio(self, snp_set):
