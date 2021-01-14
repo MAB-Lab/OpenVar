@@ -50,7 +50,7 @@ class SeqStudy:
 		chrom_set = set(chrom_names)
 		vcf_ls = []
 		for snp in self.vcf_ls:
-			snp_line = '\t'.join(snp)
+			snp_line = to_tsv_line(snp)
 			snp = dict(zip(vcf_fields, snp))
 
 			# check chrom names
@@ -70,7 +70,7 @@ class SeqStudy:
 	def check_altref_order(self):
 		vcf_ls = []
 		for snp in self.vcf_ls:
-			snp_line = '\t'.join(snp)
+			snp_line = to_tsv_line(snp)
 			snp = dict(zip(vcf_fields, snp))
 			ref = hg38_genome[chrom][snp['POS']-1]
 			if snp['REF'] != ref:
@@ -85,7 +85,7 @@ class SeqStudy:
 		lo_hg38 = LiftOver('hg19', 'hg38')
 		vcf_ls = []
 		for snp in self.vcf_ls:
-			snp_line = '\t'.join(snp)
+			snp_line = to_tsv_line(snp)
 			snp = dict(zip(vcf_fields, snp))
 			lift_hg38 = lo_hg38.convert_coordinate(snp['CHROM'], snp['POS'])
 			if lift_hg38 is not None and lift_hg38:
@@ -506,3 +506,6 @@ def mkdir(path):
 		except:
 			print("can't create dir: {}".format(path))
 	return path
+
+def to_tsv_line(ls):
+	return '\t'.join([str(x) for x in ls])
