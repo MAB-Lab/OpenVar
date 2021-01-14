@@ -3,11 +3,13 @@ import sys
 import csv
 import json
 import pickle
+import pyfaidx
 import subprocess
 import multiprocessing
 import itertools as itt
 from collections import Counter
 from matplotlib import pyplot as plt
+from pyliftover import LiftOver
 
 maxInt = sys.maxsize
 while True:
@@ -16,29 +18,24 @@ while True:
         break
     except OverflowError:
         maxInt = int(maxInt/10)
-
 csv.field_size_limit(sys.maxsize)
+
+hg38_genome = pyfaidx.Fasta('/home/xroucou_group/genomes/human/GRCh38/complete-genome.fa', as_raw=True)
 chrom_names = [str(x) for x in range(1,23)] + ['X', 'Y', 'MT']
+vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
 prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
 gene_lenghts = pickle.load(open('gene_lenghts.pkl', 'rb'))
 
 class SeqStudy:
-	def __init__(self, data_dir, file_name, study_name):
-		self.data_dir   = data_dir
-		if not os.path.exists(self.data_dir):
-			try:
-				os.mkdir(self.data_dir)
-			except:
-				print("can't create data dir...")
-
-		self.vcf_splits_dir = os.path.join(self.data_dir, 'vcf_splits')
-		if not os.path.exists(self.vcf_splits_dir):
-			os.mkdir(self.vcf_splits_dir)
-
+	def __init__(self, data_dir, file_name, study_name, results_dir):
+		self.data_dir    = mkdir(data_dir)
+		self.results_dir = mkdir(results_dir)
+		self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
 		self.file_name  = file_name
 		self.file_path  = os.path.join(data_dir, file_name)
 		self.study_name = study_name
+		self.warnings   = []
 		self.parse_vcf()
 
 	def parse_vcf(self):
@@ -50,19 +47,55 @@ class SeqStudy:
 		self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
 
 	def check_vcf_format(self):
-		# check ref-alt allele order (GNOMAD)
-		#for snp in self.vcf_ls:
-		
-		# check chrome names
+		chrom_set = set(chrom_names)
+		vcf_ls = []
+		for snp in self.vcf_ls:
+			snp_line = '\t'.join(snp)
+			snp = dict(zip(vcf_fields, snp))
 
-		# return proper feedback in case of non-compliance
-		pass
+			# check chrom names
+			snp['CHROM'] = snp['CHROM'].replace('chr', '')
+			if snp['CHROM'] not in chrom_set:
+				self.warnings.append('Unknown chromosome: {}'.format(snp['CHROM']))
 
-	def check_alt_ref_allele(self):
-		pass
-		
+			# check that position is integer
+			try:
+				snp['POS'] = int(snp['POS'])
+			except:
+				self.warnings.append('position is not an integer: {}'.format(snp_line))
+				continue
+			vcf_ls.append([snp[field] for field in vcf_fields])
+		self.vcf_ls = vcf_ls
+
+	def check_altref_order(self):
+		vcf_ls = []
+		for snp in self.vcf_ls:
+			snp_line = '\t'.join(snp)
+			snp = dict(zip(vcf_fields, snp))
+			ref = hg38_genome[chrom][snp['POS']-1]
+			if snp['REF'] != ref:
+				if snp['ALT'] == ref:
+					snp['REF'] = snp['ALT']
+					snp['ALT'] = ref
+					self.warnings.append('switched REF amd ALT alleles to match ref genome: {}'.format(snp_line))
+			vcf_ls.append([snp[field] for field in vcf_fields])
+		self.vcf_ls = vcf_ls
+
 	def convert_hg19_to_hg38(self):
-		pass
+		lo_hg38 = LiftOver('hg19', 'hg38')
+		vcf_ls = []
+		for snp in self.vcf_ls:
+			snp_line = '\t'.join(snp)
+			snp = dict(zip(vcf_fields, snp))
+			lift_hg38 = lo_hg38.convert_coordinate(snp['CHROM'], snp['POS'])
+			if lift_hg38 is not None and lift_hg38:
+				hg38_chrom, hg38_pos, strand = lift_hg38[0][0:3]
+				snp['CHROM']  = hg38_chrom
+				snp['POS']  = hg38_pos
+			else:
+				self.warnings.append('lost at liftOver conversion: {}'.format(snp_line))
+			vcf_ls.append([snp[field] for field in vcf_fields])
+		self.vcf_ls = vcf_ls
 
 	def split_by_chrom(self):
 		self.vcf_split_paths = {}
@@ -77,10 +110,11 @@ class SeqStudy:
 					writer.writerow(row)
 		return True
 
-	def store(self):
-		# store sanitized vcf in db
-		pass
-
+	def write_warnings(self):
+		fpath = os.path.join(self.results_dir) 
+		with open(fpath, 'w') as f:
+			for warning in self.warnings():
+				f.write(warning+'\n')
 
 class OpenVar:
 	def __init__(self, snpeff_path, vcf, annotation='Ensembl+OpenProt'):
@@ -92,6 +126,7 @@ class OpenVar:
 		self.snpeff_build = 'GRCh38.95_refAlt_chr{chrom_name}'
 		self.vcf = vcf
 		
+		self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
 
 	def run_snpeff_parallel_pipe(self, nprocs=12):
 		pool = multiprocessing.Pool(processes=nprocs)
@@ -110,7 +145,7 @@ class OpenVar:
 			return True
 		vcf_path           = os.path.join(self.vcf.vcf_split_paths[chrom_name])
 		vcf_ann_path       = vcf_path.replace('.vcf', '.ann.vcf')
-		snpEff_logfile     = os.path.join(self.vcf.data_dir, '{}_chr{}_snpEff.log'.format(self.vcf.study_name, chrom_name))
+		snpEff_logfile     = os.path.join(self.logs_dir, '{}_chr{}_snpEff.log'.format(self.vcf.study_name, chrom_name))
 
 		snpeff_cmd     = self.get_snpeff_cmd(snpEff_chrom_build, vcf_path)
 		
@@ -185,7 +220,7 @@ class OPVReport:
 	def __init__(self, opv):
 		self.opv = opv
 		self.vcf = opv.vcf
-		self.data_dir = self.opv.vcf.data_dir
+		self.results_dir = self.opv.vcf.results_dir
 		self.study_name = self.opv.vcf.study_name
 		self.parse_annOnePerLine()
 
@@ -196,7 +231,7 @@ class OPVReport:
 		    if os.path.isfile(fpath) and '.ann.vcf' in fpath:
 		        split_ann_vcfs.append(fpath)
 
-		ann_vcf_file_path = os.path.join(self.data_dir, self.vcf.file_name.replace('.vcf', '.ann.vcf'))        
+		ann_vcf_file_path = os.path.join(self.results_dir, self.vcf.file_name.replace('.vcf', '.ann.vcf'))        
 		with open(ann_vcf_file_path, 'w') as ann_vcf_file:
 			writer = csv.writer(ann_vcf_file, delimiter='\t')
 			for split_ann_vcf_file in split_ann_vcfs:
@@ -206,7 +241,7 @@ class OPVReport:
 						writer.writerow(row)
 
 	def write_tabular(self):
-		annOnePerLine_file_path = os.path.join(self.data_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
+		annOnePerLine_file_path = os.path.join(self.results_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
 		cols = self.annOnePerLine[0].keys()
 		with open(annOnePerLine_file_path, 'w') as tab_file:
 			writer = csv.writer(tab_file, delimiter='\t')
@@ -232,7 +267,7 @@ class OPVReport:
 		gene_snp_rate = {gene:len(list(grp))*1000/gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
 		gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
 
-		fname = os.path.join(self.data_dir, 'top_genes_var_rate.svg')
+		fname = os.path.join(self.results_dir, 'top_genes_var_rate.svg')
 		genes, rates = zip(*gene_snp_rate[:10]) # top ten
 		self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
@@ -250,7 +285,7 @@ class OPVReport:
 		max_all = dict(Counter(impacts['max_all']))
 		ref_all = dict(Counter(impacts['ref_all']))
 		fc = {i:max_all[i]/ref_all[i] for i in range(1,4)}
-		fname = os.path.join(self.data_dir, 'impact_foldchange.svg')
+		fname = os.path.join(self.results_dir, 'impact_foldchange.svg')
 		self.generate_bar_chart(fc, 'fold_change', fname)
 
 
@@ -264,7 +299,7 @@ class OPVReport:
 
 		ref_impacts = [impact_counts[i]['ref'] for i in range(1,4)]
 		alt_impacts = [impact_counts[i]['alt'] for i in range(1,4)]
-		fname = os.path.join(self.data_dir, 'var_per_impact.svg')
+		fname = os.path.join(self.results_dir, 'var_per_impact.svg')
 		self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
 
 
@@ -321,6 +356,13 @@ class OPVReport:
 			plt.savefig(fname)
 			plt.show()
 
+		if chart_type=='mutational_rate':
+			plt.bar()
+			plt.xticks()
+			plt.xlabel('')
+			plt.ylabel('')
+			plt.savefig(fname)
+			plt.show()
 
 	def count_altsnp_ratio(self, snp_set):
 		cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
@@ -430,3 +472,11 @@ def parse_feat_id(feat_id, gene_dict=None):
 	if '^' in feat_id:
 		trxpt, acc = feat_id.split('^')
 	return {'alt_trxpt_acc':trxpt, 'alt_prot_acc':acc, 'gene': prot_gene_dict[acc]}
+
+def mkdir(path):
+	if not os.path.exists(path):
+		try:
+			os.mkdir(path)
+		except:
+			print("can't create dir: {}".format(path))
+	return path
