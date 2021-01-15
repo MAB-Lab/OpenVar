@@ -165,10 +165,11 @@ class OpenVar:
 		print('pool mapped')
 		pool.close()
 		print('pool closed')
-		pool.terminate()
-		print('pool terminated')
+		#pool.terminate()
+		#print('pool terminated')
 		pool.join()
 		print('pool joined')
+		print(r)
 		if all(r):
 			return True
 		return False
