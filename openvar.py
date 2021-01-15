@@ -348,7 +348,7 @@ class OPVReport:
 		data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
 		self.generate_bar_chart(data, 'hotspots_bar', fname)
 
-		fname = os.path.join(self.output_dir, '{}_summary.pkl'.format(self.study_name))
+		fname = os.path.join(self.output_dir, 'summary.pkl')
 		pickle.dump(self.summary, open(fname, 'rb'))
 
 	def generate_bar_chart(self, data, chart_type, fname):
