@@ -33,6 +33,7 @@ class SeqStudy:
 		self.data_dir    = mkdir(data_dir)
 		self.results_dir = mkdir(results_dir)
 		self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
+		self.output_dir = mkdir(os.path.join(self.results_dir, 'output_dir'))
 		self.file_name  = file_name
 		self.file_path  = os.path.join(data_dir, file_name)
 		self.study_name = study_name
@@ -114,7 +115,7 @@ class SeqStudy:
 		return True
 
 	def write_warnings(self):
-		fpath = os.path.join(self.results_dir, 'warnings.txt') 
+		fpath = os.path.join(self.output_dir, 'warnings.txt') 
 		with open(fpath, 'w') as f:
 			for warning in self.warnings:
 				f.write(warning+'\n')
@@ -130,6 +131,7 @@ class OpenVar:
 		self.vcf = vcf
 		
 		self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
+		self.output_dir = self.vcf.output_dir
 
 	def run_snpeff_parallel_pipe(self, nprocs=12):
 		pool = multiprocessing.Pool(processes=nprocs)
@@ -223,7 +225,7 @@ class OPVReport:
 	def __init__(self, opv):
 		self.opv = opv
 		self.vcf = opv.vcf
-		self.results_dir = self.opv.vcf.results_dir
+		self.output_dir = self.opv.output_dir
 		self.study_name = self.opv.vcf.study_name
 		self.parse_annOnePerLine()
 
@@ -234,7 +236,7 @@ class OPVReport:
 		    if os.path.isfile(fpath) and '.ann.vcf' in fpath:
 		        split_ann_vcfs.append(fpath)
 
-		ann_vcf_file_path = os.path.join(self.results_dir, self.vcf.file_name.replace('.vcf', '.ann.vcf'))        
+		ann_vcf_file_path = os.path.join(self.output_dir, self.vcf.file_name.replace('.vcf', '.ann.vcf'))        
 		with open(ann_vcf_file_path, 'w') as ann_vcf_file:
 			writer = csv.writer(ann_vcf_file, delimiter='\t')
 			for split_ann_vcf_file in split_ann_vcfs:
@@ -244,7 +246,7 @@ class OPVReport:
 						writer.writerow(row)
 
 	def write_tabular(self):
-		annOnePerLine_file_path = os.path.join(self.results_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
+		annOnePerLine_file_path = os.path.join(self.output_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
 		cols = self.annOnePerLine[0].keys()
 		with open(annOnePerLine_file_path, 'w') as tab_file:
 			writer = csv.writer(tab_file, delimiter='\t')
@@ -270,7 +272,7 @@ class OPVReport:
 		gene_snp_rate = {gene:len(list(grp))*1000/gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
 		gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
 
-		fname = os.path.join(self.results_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
+		fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
 		genes, rates = zip(*gene_snp_rate[:10]) # top ten
 		self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
@@ -288,7 +290,7 @@ class OPVReport:
 		max_all = dict(Counter(impacts['max_all']))
 		ref_all = dict(Counter(impacts['ref_all']))
 		fc = {i:max_all[i]/ref_all[i] for i in range(1,4)}
-		fname = os.path.join(self.results_dir, '{}_impact_foldchange.svg'.format(self.study_name))
+		fname = os.path.join(self.output_dir, '{}_impact_foldchange.svg'.format(self.study_name))
 		self.generate_bar_chart(fc, 'fold_change', fname)
 
 
@@ -302,7 +304,7 @@ class OPVReport:
 
 		ref_impacts = [impact_counts[i]['ref'] for i in range(1,4)]
 		alt_impacts = [impact_counts[i]['alt'] for i in range(1,4)]
-		fname = os.path.join(self.results_dir, '{}_var_per_impact.svg'.format(self.study_name))
+		fname = os.path.join(self.output_dir, '{}_var_per_impact.svg'.format(self.study_name))
 		self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
 
 
@@ -329,7 +331,7 @@ class OPVReport:
 			'Mutational hotspots on altORFs':gene_altsnp_rate,
 		}
 
-		fname = os.path.join(self.results_dir, '{}_hotspots_barchart.svg'.format(self.study_name))
+		fname = os.path.join(self.output_dir, '{}_hotspots_barchart.svg'.format(self.study_name))
 		data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
 		self.generate_bar_chart(data, 'hotspots_bar', fname)
 
@@ -360,22 +362,22 @@ class OPVReport:
 			plt.yscale('log')
 			plt.xlabel('Impact Levels')
 			plt.ylabel('count SNPs')
+			plt.legend()
 			plt.savefig(fname)
 			plt.show()
 
 		if chart_type=='hotspots_bar':
 			genes, freqs, cnt_alts = data
-			nbin, min_x, max_x = 30, 0., 1.
 			bins = list(range(1, (nbin + 1)))
+			bins = [(min_x + (n-1)*(max_x/nbin), min_x + n*(max_x/nbin)) for n in bins]
+			bin_labels = ['-'.join(['{:.2f}'.format(round(x,2)) for x in left_right]) for left_right in bins]
 			genes_per_bin = {n:[] for n in bins}
 			altorf_counts = {n:0 for n in bins}
 			for gene, freq, cnt_alt in zip(genes, freqs, cnt_alts):
-				for n in bins:
-					left  = min_x + (n-1)*(max_x/nbin)
-					right = min_x + n*(max_x/nbin)
+				for left, right in bins:
 					if (freq > left) and (freq <= right):
-						genes_per_bin[n].append(gene)
-						altorf_counts[n] += cnt_alt
+						genes_per_bin[(left, right)].append(gene)
+						altorf_counts[(left, right)] += cnt_alt
 			            
 			gene_counts = {n:len(genes_per_bin[n]) for n in bins}
 			altorf_per_gene = {n:altorf_counts[n]/gene_counts[n] for n in bins}
@@ -387,7 +389,7 @@ class OPVReport:
 			fig, ax = plt.subplots()
 			bar = ax.bar(list(range(1, (nbin + 1), 1)), list(gene_counts.values()), color = colors)
 			fig.colorbar(plt.cm.ScalarMappable(norm = Norm, cmap = plt.cm.plasma), ax = ax)
-			plt.xticks(bins)
+			plt.xticks(list(range(1, (nbin + 1))), bin_labels, rotation=90)
 			plt.xlabel('binned ratio of SNPs with higher impact in alt')
 			plt.ylabel('count genes')
 			plt.savefig(fname)
