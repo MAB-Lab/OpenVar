@@ -384,6 +384,7 @@ class OPVReport:
 
 		if chart_type=='hotspots_bar':
 			nbin = 30
+			nbin, min_x, max_x = 30, 0., 1.
 			genes, freqs, cnt_alts = data
 			bins = list(range(1, (nbin + 1)))
 			bins = [(min_x + (n-1)*(max_x/nbin), min_x + n*(max_x/nbin)) for n in bins]
