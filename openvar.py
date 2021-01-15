@@ -215,7 +215,7 @@ class OpenVar:
 				chrom_name=chrom_name
 				)
 			)
-		snpsift_subproc    = subprocess.Popen(snpsift_cmd, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
+		snpsift_subproc    = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout, stdout=open(annOnePerLine_file, "w"))
 
 		perl_subproc.stdout.close()
 		snpsift_subproc.wait()
