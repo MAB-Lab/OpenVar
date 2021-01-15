@@ -55,15 +55,21 @@ class SeqStudy:
 		with open(self.file_path, 'r') as f:
 			reader = csv.reader(f, delimiter='\t')
 			for n, row in enumerate(reader):
-				vcf_ls.append(row)
+				if row:
+					vcf_ls.append(row)
 		self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
 
 	def check_vcf_format(self):
 		chrom_set = set(chrom_names)
 		vcf_ls = []
+
 		# is any chrom in chrome set?
+		study_chrom_set = set(snp[0].replace('chr', '') for snp in self.vcf_ls)
+		study_chrom_set.intersection(chrom_set)
 		# for these, is pos an integer?
+
 		# check alt ref accoring to VCF 4.2
+
 		for snp in self.vcf_ls:
 			snp_line = to_tsv_line(snp)
 			snp = dict(zip(vcf_fields, snp))
@@ -78,7 +84,7 @@ class SeqStudy:
 			try:
 				snp['POS'] = int(snp['POS'])
 			except:
-				self.warnings.append('position is not an integer: {}'.format(snp_line))
+				self.warnings.append('position is not an integer:\n{}'.format(snp_line))
 				continue
 			vcf_ls.append([snp[field] for field in vcf_fields])
 		self.vcf_ls = vcf_ls
@@ -129,13 +135,15 @@ class SeqStudy:
 		return True
 
 	def write_warnings(self):
-		fpath = os.path.join(self.output_dir, 'warnings.txt') 
-		with open(fpath, 'w') as f:
-			for warning in self.warnings:
-				f.write(warning+'\n')
+		if self.warnings:
+			fpath = os.path.join(self.output_dir, 'warnings.txt') 
+			with open(fpath, 'w') as f:
+				for warning in self.warnings:
+					f.write(warning+'\n')
 
 class OpenVar:
 	def __init__(self, snpeff_path, vcf, annotation='OP_Ens'):
+		print('creating OPV object...')
 		self.snpeff_path  = snpeff_path
 		self.snpeff_jar   = os.path.join(snpeff_path, 'snpEff.jar')
 		self.snpsift_jar  = os.path.join(snpeff_path, 'SnpSift.jar')
