@@ -21,12 +21,13 @@ while True:
         maxInt = int(maxInt/10)
 csv.field_size_limit(sys.maxsize)
 
-hg38_genome = pyfaidx.Fasta('/home/xroucou_group/genomes/human/GRCh38/complete-genome.fa', as_raw=True)
+hg38_genome    = pyfaidx.Fasta('/home/xroucou_group/genomes/human/GRCh38/complete-genome.fa', as_raw=True)
+prot_gene_dict = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/OP1.6_prot_gene_dict.pkl', 'rb'))
+gene_lenghts   = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/gene_lenghts.pkl', 'rb'))
+
 chrom_names = [str(x) for x in range(1,23)] + ['X', 'Y', 'MT']
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
-prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
-gene_lenghts = pickle.load(open('gene_lenghts.pkl', 'rb'))
 genome_old_versions = {'hg19':'hg38', 'mm39':'mm10', 'rn6':'rn5', 'dm6':'dm5'}
 
 class SeqStudy:
