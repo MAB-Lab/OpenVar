@@ -162,9 +162,13 @@ class OpenVar:
 	def run_snpeff_parallel_pipe(self, nprocs=12):
 		pool = multiprocessing.Pool(processes=nprocs)
 		r = pool.map(self.run_snpeff, chrom_names)
+		print('pool mapped')
 		pool.close()
+		print('pool closed')
 		pool.terminate()
+		print('pool terminated')
 		pool.join()
+		print('pool joined')
 		if all(r):
 			return True
 		return False
