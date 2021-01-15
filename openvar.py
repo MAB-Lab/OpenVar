@@ -27,20 +27,29 @@ vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW':1, 'MODERATE':2, 'HIGH':3, 'MODIFIER':0, 1:'LOW', 2:'MODERATE', 3:'HIGH', 0:'MODIFIER'}
 prot_gene_dict = pickle.load(open('OP1.6_prot_gene_dict.pkl', 'rb'))
 gene_lenghts = pickle.load(open('gene_lenghts.pkl', 'rb'))
+genome_old_versions = {'hg19':'hg38', 'mm39':'mm10', 'rn6':'rn5', 'dm6':'dm5'}
 
 class SeqStudy:
-	def __init__(self, data_dir, file_name, study_name, results_dir):
+	def __init__(self, data_dir, file_name, study_name, results_dir, genome_version):
 		self.data_dir    = mkdir(data_dir)
 		self.results_dir = mkdir(results_dir)
 		self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
-		self.output_dir = mkdir(os.path.join(self.results_dir, 'output_dir'))
+		self.output_dir = mkdir(os.path.join(self.results_dir, 'output'))
 		self.file_name  = file_name
 		self.file_path  = os.path.join(data_dir, file_name)
 		self.study_name = study_name
 		self.warnings   = []
+		self.file_check = True # TODO switch flag at proper check failures...
 		self.parse_vcf()
+		self.check_vcf_format()
+		if genome_version in genome_old_versions:
+			self.convert_hg19_to_hg38() #TODO change funtion to convert_genome(old_version)
+		self.check_altref_order()
+		self.write_warnings()
+		self.split_by_chrom()
 
 	def parse_vcf(self):
+		# accept comma delimiters
 		vcf_ls = []
 		with open(self.file_path, 'r') as f:
 			reader = csv.reader(f, delimiter='\t')
@@ -51,6 +60,9 @@ class SeqStudy:
 	def check_vcf_format(self):
 		chrom_set = set(chrom_names)
 		vcf_ls = []
+		# is any chrom in chrome set?
+		# for these, is pos an integer?
+		# check alt ref accoring to VCF 4.2
 		for snp in self.vcf_ls:
 			snp_line = to_tsv_line(snp)
 			snp = dict(zip(vcf_fields, snp))
@@ -77,12 +89,13 @@ class SeqStudy:
 			snp = dict(zip(vcf_fields, snp))
 			ref = hg38_genome[snp['CHROM']][snp['POS']-1]
 			if snp['REF'] != ref:
-				if snp['ALT'] == ref:
+				if snp['ALT'] == ref
 					snp['REF'] = snp['ALT']
 					snp['ALT'] = ref
-					self.warnings.append('switched REF amd ALT alleles to match ref genome: {}'.format(snp_line))
+					self.warnings.append('switched REF and ALT alleles to match ref genome: {}'.format(snp_line))
 			vcf_ls.append([snp[field] for field in vcf_fields])
 		self.vcf_ls = vcf_ls
+		# if not any match, raise error
 
 	def convert_hg19_to_hg38(self):
 		lo_hg38 = LiftOver('hg19', 'hg38')
@@ -121,7 +134,7 @@ class SeqStudy:
 				f.write(warning+'\n')
 
 class OpenVar:
-	def __init__(self, snpeff_path, vcf, annotation='Ensembl+OpenProt'):
+	def __init__(self, snpeff_path, vcf, annotation='OP_Ens'):
 		self.snpeff_path  = snpeff_path
 		self.snpeff_jar   = os.path.join(snpeff_path, 'snpEff.jar')
 		self.snpsift_jar  = os.path.join(snpeff_path, 'SnpSift.jar')
@@ -335,6 +348,9 @@ class OPVReport:
 		data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
 		self.generate_bar_chart(data, 'hotspots_bar', fname)
 
+		fname = os.path.join(self.output_dir, '{}_summary.pkl'.format(self.study_name))
+		pickle.dump(self.summary, open(fname, 'rb'))
+
 	def generate_bar_chart(self, data, chart_type, fname):
 		if chart_type=='gene_var_rate':
 			genes, rates = data
@@ -367,6 +383,7 @@ class OPVReport:
 			plt.show()
 
 		if chart_type=='hotspots_bar':
+			nbin = 30
 			genes, freqs, cnt_alts = data
 			bins = list(range(1, (nbin + 1)))
 			bins = [(min_x + (n-1)*(max_x/nbin), min_x + n*(max_x/nbin)) for n in bins]
