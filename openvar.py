@@ -399,7 +399,7 @@ class OPVReport:
 						altorf_counts[(left, right)] += cnt_alt
 			            
 			gene_counts = {n:len(genes_per_bin[n]) for n in bins}
-			altorf_per_gene = {n:altorf_counts[n]/gene_counts[n] for n in bins}
+			altorf_per_gene = {n:altorf_counts[n]/gene_counts[n] if gene_counts[n]>0 else 0. for n in bins}
 
 			Norm = plt.Normalize(min(altorf_per_gene.values()), max(altorf_per_gene.values()))
 			val = list(altorf_per_gene.values())
