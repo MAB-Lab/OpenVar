@@ -89,7 +89,7 @@ class SeqStudy:
 			snp = dict(zip(vcf_fields, snp))
 			ref = hg38_genome[snp['CHROM']][snp['POS']-1]
 			if snp['REF'] != ref:
-				if snp['ALT'] == ref
+				if snp['ALT'] == ref:
 					snp['REF'] = snp['ALT']
 					snp['ALT'] = ref
 					self.warnings.append('switched REF and ALT alleles to match ref genome: {}'.format(snp_line))
