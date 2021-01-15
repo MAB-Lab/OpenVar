@@ -370,9 +370,9 @@ class OPVReport:
 		if chart_type=='gene_var_rate':
 			genes, rates = data
 			if len(genes) <10:
-				x = range(1,11)
-			else:
 				x = range(1,len(genes))
+			else:
+				x = range(1,11)
 			plt.bar(x, rates)
 			plt.xticks(x, genes, rotation='vertical')
 			plt.xlabel('Genes')
