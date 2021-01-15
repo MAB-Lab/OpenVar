@@ -162,14 +162,9 @@ class OpenVar:
 	def run_snpeff_parallel_pipe(self, nprocs=12):
 		pool = multiprocessing.Pool(processes=nprocs)
 		r = pool.map(self.run_snpeff, chrom_names)
-		print('pool mapped')
 		pool.close()
-		print('pool closed')
-		#pool.terminate()
-		#print('pool terminated')
 		pool.join()
-		print('pool joined')
-		print(r)
+		
 		if all(r):
 			return True
 		return False
@@ -259,6 +254,7 @@ class OPVReport:
 		self.output_dir = self.opv.output_dir
 		self.study_name = self.opv.vcf.study_name
 		self.parse_annOnePerLine()
+		print('annOnePerLine parsed.')
 
 	def aggregate_annotated_vcf(self):
 		split_ann_vcfs = []
@@ -317,10 +313,11 @@ class OPVReport:
 			'ref_all':[x['ref_max_impact'] for x in self.analyzed_variants if x['ref_max_impact']>-1],
 			'max_all':[max([snp['alt_max_impact'], snp['ref_max_impact']]) for snp in self.analyzed_variants if snp['alt_max_impact']>-1 or snp['ref_max_impact']>-1],
 		}
-
+		print(impacts)
 		max_all = dict(Counter(impacts['max_all']))
 		ref_all = dict(Counter(impacts['ref_all']))
-		fc = {i:max_all[i]/ref_all[i] for i in range(1,4)}
+		fc = {i:max_all[i]/ref_all[i] if ref_all[i]>0 else 0. for i in range(1,4)}
+		print(fc)
 		fname = os.path.join(self.output_dir, '{}_impact_foldchange.svg'.format(self.study_name))
 		self.generate_bar_chart(fc, 'fold_change', fname)
 
