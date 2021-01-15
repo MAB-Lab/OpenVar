@@ -372,8 +372,8 @@ class OPVReport:
 
 		if chart_type=='stacked_impact':
 			ref_impacts, alt_impacts = data
-			plt.bar(range(1,4), ref_impacts)
-			plt.bar(range(1,4), alt_impacts, bottom=ref_impacts)
+			plt.bar(range(1,4), ref_impacts, label='ref')
+			plt.bar(range(1,4), alt_impacts, bottom=ref_impacts, label='alt')
 			plt.xticks(range(1,4), ['Low', 'Medium', 'High'])
 			plt.yscale('log')
 			plt.xlabel('Impact Levels')
