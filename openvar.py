@@ -42,12 +42,17 @@ class SeqStudy:
 		self.warnings   = []
 		self.file_check = True # TODO switch flag at proper check failures...
 		self.parse_vcf()
+		print('vcf parsed')
 		self.check_vcf_format()
+		print('vcf format checked')
 		if genome_version in genome_old_versions:
 			self.convert_hg19_to_hg38() #TODO change funtion to convert_genome(old_version)
 		self.check_altref_order()
+		print('vcf altref allele check')
 		self.write_warnings()
+		print('vcf warnings written')
 		self.split_by_chrom()
+		print('vcf chroms splited')
 
 	def parse_vcf(self):
 		# accept comma delimiters
@@ -132,7 +137,6 @@ class SeqStudy:
 				writer = csv.writer(vcf_file, delimiter='\t')
 				for row in rows:
 					writer.writerow(row)
-		return True
 
 	def write_warnings(self):
 		if self.warnings:
