@@ -349,7 +349,7 @@ class OPVReport:
 		self.generate_bar_chart(data, 'hotspots_bar', fname)
 
 		fname = os.path.join(self.output_dir, 'summary.pkl')
-		pickle.dump(self.summary, open(fname, 'rb'))
+		pickle.dump(self.summary, open(fname, 'wb'))
 
 	def generate_bar_chart(self, data, chart_type, fname):
 		if chart_type=='gene_var_rate':
