@@ -313,11 +313,11 @@ class OPVReport:
 			'ref_all':[x['ref_max_impact'] for x in self.analyzed_variants if x['ref_max_impact']>-1],
 			'max_all':[max([snp['alt_max_impact'], snp['ref_max_impact']]) for snp in self.analyzed_variants if snp['alt_max_impact']>-1 or snp['ref_max_impact']>-1],
 		}
-		print(impacts)
+
 		max_all = dict(Counter(impacts['max_all']))
 		ref_all = dict(Counter(impacts['ref_all']))
 		fc = {i:max_all[i]/ref_all[i] if ref_all[i]>0 else 0. for i in range(1,4)}
-		print(fc)
+
 		fname = os.path.join(self.output_dir, '{}_impact_foldchange.svg'.format(self.study_name))
 		self.generate_bar_chart(fc, 'fold_change', fname)
 
