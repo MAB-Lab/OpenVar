@@ -151,7 +151,7 @@ class OpenVar:
 		self.snpeff_path  = snpeff_path
 		self.snpeff_jar   = os.path.join(snpeff_path, 'snpEff.jar')
 		self.snpsift_jar  = os.path.join(snpeff_path, 'SnpSift.jar')
-
+		self.verbose = False
 		# make dict annotation -> build
 		self.snpeff_build = 'GRCh38.95_refAlt_chr{chrom_name}'
 		self.vcf = vcf
@@ -169,7 +169,7 @@ class OpenVar:
 			return True
 		return False
 
-	def run_snpeff(self, chrom_name, verbose=True):
+	def run_snpeff(self, chrom_name):
 		snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
 		if chrom_name not in self.vcf.vcf_split_paths:
 			print('no variant in chromosome {}'.format(chrom_name))
@@ -180,7 +180,7 @@ class OpenVar:
 
 		snpeff_cmd     = self.get_snpeff_cmd(snpEff_chrom_build, vcf_path)
 		
-		if verbose:
+		if self.verbose:
 			print('Running SnpEff...')
 			print(snpeff_cmd)
 
@@ -198,7 +198,7 @@ class OpenVar:
 		
 		cat_cmd = self.get_cat_cmd(vcf_ann_path)
 		perl_cmd = self.get_perl_cmd()
-		if verbose:
+		if self.verbose:
 			print('Formating output...')
 			print(cat_cmd)
 			print(perl_cmd)
@@ -207,7 +207,7 @@ class OpenVar:
 		cat_subproc.stdout.close()
 
 		snpsift_cmd = self.get_snpsift_cmd()
-		if verbose:
+		if self.verbose:
 			print(snpsift_cmd)
 		annOnePerLine_file = os.path.join(
 			self.vcf.vcf_splits_dir, '{study_name}_{chrom_name}_annOnePerLine.tsv'.format(
