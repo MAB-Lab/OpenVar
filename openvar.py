@@ -369,8 +369,8 @@ class OPVReport:
 	def generate_bar_chart(self, data, chart_type, fname):
 		if chart_type=='gene_var_rate':
 			genes, rates = data
-			plt.bar(range(1,len(genes)), rates)
-			plt.xticks(range(1,len(genes)), genes, rotation='vertical')
+			plt.bar(range(1,len(genes)+1), rates)
+			plt.xticks(range(1,len(genes)+1), genes, rotation='vertical')
 			plt.xlabel('Genes')
 			plt.ylabel('SNPs per Kb')
 			plt.savefig(fname)
