@@ -1,7 +1,6 @@
 import os
 import sys
 import csv
-import json
 import pathlib
 import pickle
 import pyfaidx
