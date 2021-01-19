@@ -320,6 +320,7 @@ class OPVReport:
 
         max_all = dict(Counter(impacts['max_all']))
         ref_all = dict(Counter(impacts['ref_all']))
+        impact_ann = {'max_all':max_all, 'ref_all':ref_all}
         fc = {i: max_all[i] / ref_all[i] if ref_all[i] > 0 else 0. for i in range(1, 4)}
 
         fname = os.path.join(self.output_dir, '{}_impact_foldchange.svg'.format(self.study_name))
@@ -343,6 +344,7 @@ class OPVReport:
                             itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
 
         self.summary = {
+	        'study_name': self.study_name,
             'Counts summary': {
                 'Total number of variants': len(snp_set),
                 'Total number of affected genes': len(gene_snp_rate),
@@ -357,6 +359,7 @@ class OPVReport:
                 'Number of variants with highest impact on reference proteins': count_higest['ref'],
                 'Number of variants with highest impact on alternative proteins': count_higest['alt'],
                 'Impact Counts': impact_counts,
+                'Impact Annotation':impact_ann,
                 'Fold Change': fc,
             },
             'Mutational hotspots on altORFs': gene_altsnp_rate,
