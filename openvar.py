@@ -75,7 +75,6 @@ class SeqStudy:
             snp = dict(zip(vcf_fields, snp))
 
             # check chromosome names
-
             if snp['CHROM'].replace('chr', '') not in chrom_set:
                 self.warnings['unknown chromosomes'].append(snp['CHROM'])
                 continue
@@ -107,10 +106,12 @@ class SeqStudy:
             snp = dict(zip(vcf_fields, snp))
             ref = hg38_genome[snp['CHROM']][snp['POS'] - 1]
             if snp['REF'] != ref:
-                if snp['ALT'] == ref:
-                    snp['REF'] = snp['ALT']
-                    snp['ALT'] = ref
+                if snp['ALT'] != ref:
                     self.warnings['invalid alleles'].append(snp_line)
+                    continue
+                snp['REF'] = snp['ALT']
+                snp['ALT'] = ref
+
             vcf_ls.append([snp[field] for field in vcf_fields])
         self.vcf_ls = vcf_ls
 
