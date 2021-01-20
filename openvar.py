@@ -118,6 +118,7 @@ class SeqStudy:
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
         vcf_ls = []
+        self.warnings['lost at liftOver'] = [snp_line]
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
             snp = dict(zip(vcf_fields, snp))
@@ -127,11 +128,10 @@ class SeqStudy:
                 hg38_chrom, hg38_pos, strand = lift_hg38[0][0:3]
                 snp['CHROM'] = hg38_chrom.replace('chr', '')
                 if snp['CHROM'] not in chrom_set:
+                    self.warnings['lost at liftOver'].append(snp_line)
                     continue
                 snp['POS'] = hg38_pos
             else:
-                if 'lost at liftOver' not in self.warnings:
-                    self.warnings['lost at liftOver'] = [snp_line]
                 self.warnings['lost at liftOver'].append(snp_line)
                 continue
             vcf_ls.append([snp[field] for field in vcf_fields])
