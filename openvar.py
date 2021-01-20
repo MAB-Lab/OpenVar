@@ -43,19 +43,20 @@ class SeqStudy:
         self.file_path = os.path.join(data_dir, file_name)
         self.study_name = study_name
         self.warnings = {'unknown chromosomes': [], 'invalid positions': [], 'invalid alleles': []}
-        self.file_check = True  # TODO switch flag at proper check failures...
+        self.file_check = True
         self.parse_vcf()
         print('vcf parsed')
         self.check_vcf_format()
-        print('vcf format checked')
-        if genome_version in genome_old_versions:
-            self.convert_hg19_to_hg38()  # TODO change function to convert_genome(old_version)
-        self.check_altref_order()
-        print('vcf altref allele check')
-        self.write_warnings()
-        print('vcf warnings written')
-        self.split_by_chrom()
-        print('vcf chroms splited')
+        if self.file_check:
+            print('vcf format checked')
+            if genome_version in genome_old_versions:
+                self.convert_hg19_to_hg38()  # TODO change function to "convert_genome(old_version)"
+            self.check_altref_order()
+            print('vcf altref allele check')
+            self.write_warnings()
+            print('vcf warnings written')
+            self.split_by_chrom()
+            print('vcf chroms splited')
 
     def parse_vcf(self):
         vcf_ls = []
@@ -150,9 +151,10 @@ class SeqStudy:
         fpath = os.path.join(self.output_dir, 'warnings.txt')
         with open(fpath, 'w') as f:
             for warning, faults in self.warnings.items():
-                f.write(warning + '\n')
-                for fault in faults:
-                    f.write('\t' + fault + '\n')
+                if faults:
+                    f.write(warning + '\n')
+                    for fault in faults:
+                        f.write('\t' + fault + '\n')
 
 
 class OpenVar:
@@ -418,7 +420,6 @@ class OPVReport:
             plt.show()
 
         if chart_type == 'hotspots_bar':
-            nbin = 30
             nbin, min_x, max_x = 30, 0., 1.
             genes, freqs, cnt_alts = data
             bins = list(range(1, (nbin + 1)))
@@ -440,7 +441,7 @@ class OPVReport:
             colors = plt.cm.plasma(Norm(val))
 
             fig, ax = plt.subplots()
-            bar = ax.bar(list(range(1, (nbin + 1), 1)), list(gene_counts.values()), color=colors)
+            ax.bar(list(range(1, (nbin + 1), 1)), list(gene_counts.values()), color=colors)
             fig.colorbar(plt.cm.ScalarMappable(norm=Norm, cmap=plt.cm.plasma_r), ax=ax)
             plt.xticks(list(range(1, (nbin + 1))), bin_labels, rotation=90)
             plt.xlabel('binned ratio of SNPs with higher impact in alt')
@@ -457,7 +458,6 @@ class OPVReport:
             # 'snp_set': snp_set,
             'cnt_snps': cnt_snps,
             'cnt_alt_snps': cnt_alt_snps,
-            'score': (cnt_alt_snps / cnt_snps) * cnt_alt_snps,
             'ratio_higher_alt': cnt_alt_snps / cnt_snps,
             'alts': alts
         }
