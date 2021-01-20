@@ -125,7 +125,7 @@ class SeqStudy:
             lift_hg38 = lo_hg38.convert_coordinate(chrom, snp['POS'])
             if lift_hg38 is not None and lift_hg38:
                 hg38_chrom, hg38_pos, strand = lift_hg38[0][0:3]
-                snp['CHROM'] = hg38_chrom
+                snp['CHROM'] = hg38_chrom.replace('chr', '')
                 snp['POS'] = hg38_pos
             else:
                 if 'lost at liftOver' not in self.warnings:
