@@ -75,10 +75,11 @@ class SeqStudy:
             snp = dict(zip(vcf_fields, snp))
 
             # check chromosome names
-            snp['CHROM'] = snp['CHROM']
+
             if snp['CHROM'].replace('chr', '') not in chrom_set:
                 self.warnings['unknown chromosomes'].append(snp['CHROM'])
                 continue
+            snp['CHROM'] = snp['CHROM'].replace('chr', '')
 
             # check that position is integer
             try:
