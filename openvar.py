@@ -118,7 +118,7 @@ class SeqStudy:
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
         vcf_ls = []
-        self.warnings['lost at liftOver'] = [snp_line]
+        self.warnings['lost at liftOver'] = []
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
             snp = dict(zip(vcf_fields, snp))
