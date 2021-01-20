@@ -26,6 +26,7 @@ prot_gene_dict = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_d
 gene_lenghts = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/gene_lenghts.pkl', 'rb'))
 
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
+chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
@@ -68,7 +69,6 @@ class SeqStudy:
         self.vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
 
     def check_vcf_format(self):
-        chrom_set = set(chrom_names)
         vcf_ls = []
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
@@ -126,6 +126,8 @@ class SeqStudy:
             if lift_hg38 is not None and lift_hg38:
                 hg38_chrom, hg38_pos, strand = lift_hg38[0][0:3]
                 snp['CHROM'] = hg38_chrom.replace('chr', '')
+                if snp['CHROM'] not in chrom_set:
+                    continue
                 snp['POS'] = hg38_pos
             else:
                 if 'lost at liftOver' not in self.warnings:
