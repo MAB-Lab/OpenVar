@@ -320,10 +320,10 @@ class OPVReport:
                         snp['alt_max_impact'] > -1 or snp['ref_max_impact'] > -1],
         }
 
-        max_all = {zip(range(1,4),[0]*3)}
+        max_all = dict(zip(range(1,4),[0]*3))
         max_all.update(dict(Counter(impacts['max_all'])))
 
-        ref_all = {zip(range(1,4),[0]*3)}
+        ref_all = dict(zip(range(1,4),[0]*3))
         ref_all.update(dict(Counter(impacts['ref_all'])))
 
         impact_ann = {'max_all':max_all, 'ref_all':ref_all}
