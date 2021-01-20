@@ -5,6 +5,7 @@ import pathlib
 import pickle
 import pyfaidx
 import subprocess
+import logging
 import multiprocessing
 import itertools as itt
 from collections import Counter
@@ -31,7 +32,8 @@ genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5
 
 
 class SeqStudy:
-    def __init__(self, data_dir, file_name, study_name, results_dir, genome_version):
+    def __init__(self, data_dir, file_name, study_name, results_dir, genome_version, verbose=False):
+        self.verbose = verbose
         self.data_dir = mkdir(data_dir)
         self.results_dir = mkdir(results_dir)
         self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
@@ -318,8 +320,8 @@ class OPVReport:
                         snp['alt_max_impact'] > -1 or snp['ref_max_impact'] > -1],
         }
 
-        max_all = dict(Counter(impacts['max_all']))
-        ref_all = dict(Counter(impacts['ref_all']))
+        max_all = {zip(range(1,4),[0]*3)}.update(dict(Counter(impacts['max_all'])))
+        ref_all = {zip(range(1,4),[0]*3)}.update(dict(Counter(impacts['ref_all'])))
         impact_ann = {'max_all':max_all, 'ref_all':ref_all}
         fc = {i: max_all[i] / ref_all[i] if ref_all[i] > 0 else 0. for i in range(1, 4)}
 
