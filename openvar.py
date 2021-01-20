@@ -26,6 +26,7 @@ prot_gene_dict = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_d
 gene_lenghts = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/gene_lenghts.pkl', 'rb'))
 
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
+accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
@@ -41,14 +42,14 @@ class SeqStudy:
         self.file_name = file_name
         self.file_path = os.path.join(data_dir, file_name)
         self.study_name = study_name
-        self.warnings = []
+        self.warnings = {'unknown chromosomes': [], 'invalid positions': [], 'invalid alleles': []}
         self.file_check = True  # TODO switch flag at proper check failures...
         self.parse_vcf()
         print('vcf parsed')
         self.check_vcf_format()
         print('vcf format checked')
         if genome_version in genome_old_versions:
-            self.convert_hg19_to_hg38()  # TODO change funtion to convert_genome(old_version)
+            self.convert_hg19_to_hg38()  # TODO change function to convert_genome(old_version)
         self.check_altref_order()
         print('vcf altref allele check')
         self.write_warnings()
@@ -57,7 +58,6 @@ class SeqStudy:
         print('vcf chroms splited')
 
     def parse_vcf(self):
-        # accept comma delimiters
         vcf_ls = []
         with open(self.file_path, 'r') as f:
             reader = csv.reader(f, delimiter='\t')
@@ -69,31 +69,33 @@ class SeqStudy:
     def check_vcf_format(self):
         chrom_set = set(chrom_names)
         vcf_ls = []
-
-        # is any chrom in chrome set?
-        study_chrom_set = set(snp[0].replace('chr', '') for snp in self.vcf_ls)
-        study_chrom_set.intersection(chrom_set)
-        # for these, is pos an integer?
-
-        # check alt ref accoring to VCF 4.2
-
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
             snp = dict(zip(vcf_fields, snp))
 
-            # check chrom names
-            snp['CHROM'] = snp['CHROM'].replace('chr', '')
-            if snp['CHROM'] not in chrom_set:
-                self.warnings.append('Unknown chromosome: {}'.format(snp['CHROM']))
+            # check chromosome names
+            snp['CHROM'] = snp['CHROM']
+            if snp['CHROM'].replace('chr', '') not in chrom_set:
+                self.warnings['unknown chromosomes'].append(snp['CHROM'])
                 continue
 
             # check that position is integer
             try:
                 snp['POS'] = int(snp['POS'])
             except:
-                self.warnings.append('position is not an integer:\n{}'.format(snp_line))
+                self.warnings['invalid positions'].append(snp['POS'])
                 continue
+
+            # check alt ref according to VCF 4.2
+            if not validate_allele_format(snp['ALT']) and validate_allele_format(snp['REF']):
+                self.warnings['invalid alleles'].append(snp_line)
+                continue
+
             vcf_ls.append([snp[field] for field in vcf_fields])
+
+        if not vcf_ls:
+            self.file_check = False
+
         self.vcf_ls = vcf_ls
 
     def check_altref_order(self):
@@ -106,11 +108,9 @@ class SeqStudy:
                 if snp['ALT'] == ref:
                     snp['REF'] = snp['ALT']
                     snp['ALT'] = ref
-                    self.warnings.append('switched REF and ALT alleles to match ref genome: {}'.format(snp_line))
+                    self.warnings['invalid alleles'].append(snp_line)
             vcf_ls.append([snp[field] for field in vcf_fields])
         self.vcf_ls = vcf_ls
-
-    # if not any match, raise error
 
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
@@ -125,7 +125,10 @@ class SeqStudy:
                 snp['CHROM'] = hg38_chrom
                 snp['POS'] = hg38_pos
             else:
-                self.warnings.append('lost at liftOver conversion: {}'.format(snp_line))
+                if 'lost at liftOver' not in self.warnings:
+                    self.warnings['lost at liftOver'] = [snp_line]
+                self.warnings['lost at liftOver'].append(snp_line)
+                continue
             vcf_ls.append([snp[field] for field in vcf_fields])
         self.vcf_ls = vcf_ls
 
@@ -142,11 +145,14 @@ class SeqStudy:
                     writer.writerow(row)
 
     def write_warnings(self):
-        if self.warnings:
-            fpath = os.path.join(self.output_dir, 'warnings.txt')
-            with open(fpath, 'w') as f:
-                for warning in self.warnings:
-                    f.write(warning + '\n')
+        if not any(self.warnings.values()):
+            pass
+        fpath = os.path.join(self.output_dir, 'warnings.txt')
+        with open(fpath, 'w') as f:
+            for warning, faults in self.warnings.items():
+                f.write(warning + '\n')
+                for fault in faults:
+                    f.write('\t' + fault + '\n')
 
 
 class OpenVar:
@@ -320,10 +326,10 @@ class OPVReport:
                         snp['alt_max_impact'] > -1 or snp['ref_max_impact'] > -1],
         }
 
-        max_all = dict(zip(range(1,4),[0]*3))
+        max_all = dict(zip(range(1, 4), [0]*3))
         max_all.update(dict(Counter(impacts['max_all'])))
 
-        ref_all = dict(zip(range(1,4),[0]*3))
+        ref_all = dict(zip(range(1, 4), [0]*3))
         ref_all.update(dict(Counter(impacts['ref_all'])))
 
         impact_ann = {'max_all':max_all, 'ref_all':ref_all}
@@ -334,7 +340,8 @@ class OPVReport:
 
         impact_counts = dict(zip(range(1, 4), [{'alt': 0, 'ref': 0}, {'alt': 0, 'ref': 0}, {'alt': 0, 'ref': 0}]))
         for snp in self.analyzed_variants:
-            if snp['ref_max_impact'] == -1 and snp['alt_max_impact'] == -1: continue
+            if snp['ref_max_impact'] == -1 and snp['alt_max_impact'] == -1:
+                continue
             if snp['ref_max_impact'] >= snp['alt_max_impact']:
                 impact_counts[snp['ref_max_impact']]['ref'] += 1
             elif snp['alt_max_impact'] > snp['ref_max_impact']:
@@ -565,3 +572,11 @@ def mkdir(path):
 
 def to_tsv_line(ls):
     return '\t'.join([str(x) for x in ls])
+
+
+def validate_allele_format(allele):
+    for a in allele.split(','):
+        for nt in a:
+            if nt.lower() not in accepted_bases:
+                return False
+    return True
