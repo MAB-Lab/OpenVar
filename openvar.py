@@ -468,10 +468,9 @@ class OPVReport:
         snps = []
         for snp in self.annOnePerLine:
             var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
-            snps.append(
-                (var_name, snp['ANN[*].FEATUREID'], snp['ANN[*].HGVS_P'], snp['ANN[*].HGVS_C'], snp['ANN[*].IMPACT'],
-                 snp['ANN[*].ERRORS'])
-            )
+            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA'
+                               for x in ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS']])
+            snps.append(eff)
         analyzed_variants = []
         for snp in itt.groupby(snps, key=lambda x: x[0]):
             analyzed_variants.append(self.analyze_variant(*snp))
