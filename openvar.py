@@ -367,7 +367,7 @@ class OPVReport:
                 'Total number of affected genes': len(gene_snp_rate),
                 'Total number of affected proteins': sum(prot_counts.values()),
                 'Total number of affected reference proteins': prot_counts['ref'],
-                'Total number of affected alternative proteins': prot_counts['ref'],
+                'Total number of affected alternative proteins': prot_counts['alt'],
                 'Total number of affected novel isoforms': prot_counts['iso'],
             },
             'Chromosome Level': snps_per_chroms,
