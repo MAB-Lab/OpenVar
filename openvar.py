@@ -5,7 +5,6 @@ import pathlib
 import pickle
 import pyfaidx
 import subprocess
-import logging
 import multiprocessing
 import itertools as itt
 from collections import Counter
@@ -171,7 +170,6 @@ class OpenVar:
         # make dict annotation -> build
         self.snpeff_build = 'GRCh38.95_refAlt_chr{chrom_name}'
         self.vcf = vcf
-
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
 
@@ -494,7 +492,8 @@ class OPVReport:
                         keys = ls
                         continue
                     line = dict(zip(keys, ls))
-                    line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
+                    if 'ANN[*].EFFECT' in line:
+                        line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
                     lines.append(line)
         self.annOnePerLine = lines
 
