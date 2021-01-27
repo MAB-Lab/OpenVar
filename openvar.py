@@ -295,6 +295,13 @@ class OPVReport:
             for row in self.annOnePerLine:
                 writer.writerow(row.values())
 
+        max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
+        cols = self.analyzed_variants[0].keys()
+        with open(max_impact_file_path) as tab_file:
+            writer = csv.writer(tab_file, delimiter='\t')
+            for row in self.analyzed_variants:
+                writer.writerow(row.values())
+
     def compute_summary_stats(self):
         # overall summary
         prot_counts = {
