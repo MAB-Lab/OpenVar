@@ -7,6 +7,7 @@ import pyfaidx
 import subprocess
 import multiprocessing
 import itertools as itt
+import numpy as np
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
