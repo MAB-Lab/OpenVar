@@ -526,32 +526,32 @@ class OPVReport:
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs = eff[1:]
             #if hgvs_p:
-                if 'ENST' in feat_id and '@' in feat_id:
-                    atts['in_ref'] = 'true'
-                    if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
-                        ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
-                        ref_prot_acc = ref_prot_acc.split('.')[0]
-                        gene = prot_gene_dict[ref_prot_acc]
-                        atts.update({
-                            'gene': gene,
-                            'ref_trxpt_acc': ref_trxpt_acc,
-                            'ref_prot_acc': ref_prot_acc,
-                            'ref_hgvs_p': hgvs_p,
-                            'ref_hgvs_c': hgvs_c,
-                            'ref_errs': errs,
-                            'ref_max_impact': impact_levels[impact]
-                        })
-                elif '^' in feat_id:
-                    atts['in_alt'] = 'true'
-                    if impact_levels[impact] and impact_levels[impact] > atts['alt_max_impact']:
-                        alt_feat_dict = parse_feat_id(feat_id)
-                        atts.update(alt_feat_dict)
-                        atts.update({
-                            'alt_hgvs_p': hgvs_p,
-                            'alt_hgvs_c': hgvs_c,
-                            'alt_errs': errs,
-                            'alt_max_impact': impact_levels[impact],
-                        })
+            if 'ENST' in feat_id and '@' in feat_id:
+                atts['in_ref'] = 'true'
+                if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
+                    ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
+                    ref_prot_acc = ref_prot_acc.split('.')[0]
+                    gene = prot_gene_dict[ref_prot_acc]
+                    atts.update({
+                        'gene': gene,
+                        'ref_trxpt_acc': ref_trxpt_acc,
+                        'ref_prot_acc': ref_prot_acc,
+                        'ref_hgvs_p': hgvs_p,
+                        'ref_hgvs_c': hgvs_c,
+                        'ref_errs': errs,
+                        'ref_max_impact': impact_levels[impact]
+                    })
+            elif '^' in feat_id:
+                atts['in_alt'] = 'true'
+                if impact_levels[impact] and impact_levels[impact] > atts['alt_max_impact']:
+                    alt_feat_dict = parse_feat_id(feat_id)
+                    atts.update(alt_feat_dict)
+                    atts.update({
+                        'alt_hgvs_p': hgvs_p,
+                        'alt_hgvs_c': hgvs_c,
+                        'alt_errs': errs,
+                        'alt_max_impact': impact_levels[impact],
+                    })
         atts.update({
             'hg38_pos': int(variant.split('_')[1]),
         })
