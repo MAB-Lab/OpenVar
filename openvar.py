@@ -478,7 +478,7 @@ class OPVReport:
         for snp in self.annOnePerLine:
             var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
             eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA'
-                               for x in ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS']])
+                               for x in ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']])
             snps.append(eff)
         analyzed_variants = []
         for snp in itt.groupby(snps, key=lambda x: x[0]):
@@ -525,14 +525,18 @@ class OPVReport:
             'gene': 'null'
         }
         for eff in effs:
-            feat_id, hgvs_p, hgvs_c, impact, errs = eff[1:]
+            feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
             #if hgvs_p:
-            if 'ENST' in feat_id and '@' in feat_id:
+            if 'ENST' in feat_id:
                 atts['in_ref'] = 'true'
                 if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
-                    ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
-                    ref_prot_acc = ref_prot_acc.split('.')[0]
-                    gene = prot_gene_dict[ref_prot_acc]
+                    if '@' in feat_id:
+                        ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
+                        ref_prot_acc = ref_prot_acc.split('.')[0]
+                        gene = prot_gene_dict[ref_prot_acc]
+                    else:
+                        ref_trxpt_acc = feat_id.split('.')[0]
+                        ref_prot_acc = ''
                     atts.update({
                         'gene': gene,
                         'ref_trxpt_acc': ref_trxpt_acc,
