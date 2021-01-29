@@ -11,7 +11,6 @@ import numpy as np
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
-
 maxInt = sys.maxsize
 while True:
     try:
