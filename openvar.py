@@ -21,9 +21,9 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 
-hg38_genome = pyfaidx.Fasta('/home/xroucou_group/genomes/human/GRCh38/complete-genome.fa', as_raw=True)
-prot_gene_dict = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/OP1.6_prot_gene_dict.pkl', 'rb'))
-gene_lenghts = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/gene_lenghts.pkl', 'rb'))
+hg38_genome = pyfaidx.Fasta('/shared-genomes-folder/human/GRCh38/complete-genome.fa', as_raw=True)
+prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
+gene_lenghts = pickle.load(open('/open-var-deposit/gene_lenghts.pkl', 'rb'))
 
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
 chrom_set = set(chrom_names)
