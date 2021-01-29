@@ -21,7 +21,7 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 
-hg38_genome = pyfaidx.Fasta('/shared-genomes-folder/human/GRCh38/complete-genome.fa', as_raw=True)
+hg38_genome = pyfaidx.Fasta('/shared-genomes-folder/human/GRCh38/complete-genome.fa', as_raw=True, rebuild=False)
 prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
 gene_lenghts = pickle.load(open('/open-var-deposit/gene_lenghts.pkl', 'rb'))
 
