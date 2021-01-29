@@ -527,9 +527,9 @@ class OPVReport:
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
             #if hgvs_p:
-            if 'ENST' in feat_id:
+            if 'ENST' in feat_id and '^' not in feat_id:
                 atts['in_ref'] = 'true'
-                if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
+                if impact_levels[impact] and impact_levels[impact] >= atts['ref_max_impact']:
                     if '@' in feat_id:
                         ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
                         ref_prot_acc = ref_prot_acc.split('.')[0]
@@ -548,7 +548,7 @@ class OPVReport:
                     })
             elif '^' in feat_id:
                 atts['in_alt'] = 'true'
-                if impact_levels[impact] and impact_levels[impact] > atts['alt_max_impact']:
+                if impact_levels[impact] and impact_levels[impact] >= atts['alt_max_impact']:
                     alt_feat_dict = parse_feat_id(feat_id)
                     atts.update(alt_feat_dict)
                     atts.update({
