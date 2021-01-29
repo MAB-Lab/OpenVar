@@ -462,10 +462,10 @@ class OPVReport:
     def count_altsnp_ratio(self, snp_set):
         cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
         cnt_alt_snps = len(set(snp['hg38_name'] for snp in snp_set if
-                               snp['in_alt'] == 'true' and snp['alt_max_impact'] > snp['ref_max_impact']))
+                               snp['in_alt'] == 'true' and snp['alt_max_impact'] >= snp['ref_max_impact']))
         alts = list(set(snp['alt_prot_acc'] for snp in snp_set if snp['alt_prot_acc'] != 'null'))
         return {
-            # 'snp_set': snp_set,
+            'ave_impact': np.mean([x['alt_max_impact'] for x in snp_set]),
             'cnt_snps': cnt_snps,
             'cnt_alt_snps': cnt_alt_snps,
             'ratio_higher_alt': cnt_alt_snps / cnt_snps,
@@ -525,7 +525,7 @@ class OPVReport:
         }
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs = eff[1:]
-            if hgvs_p:
+            #if hgvs_p:
                 if 'ENST' in feat_id and '@' in feat_id:
                     atts['in_ref'] = 'true'
                     if impact_levels[impact] and impact_levels[impact] > atts['ref_max_impact']:
