@@ -355,9 +355,9 @@ class OPVReport:
         for snp in self.analyzed_variants:
             if snp['ref_max_impact'] == -1 and snp['alt_max_impact'] == -1:
                 continue
-            if snp['ref_max_impact'] >= snp['alt_max_impact']:
+            if snp['ref_max_impact'] and snp['ref_max_impact'] >= snp['alt_max_impact']:
                 impact_counts[snp['ref_max_impact']]['ref'] += 1
-            elif snp['alt_max_impact'] > snp['ref_max_impact']:
+            elif snp['alt_max_impact'] and snp['alt_max_impact'] > snp['ref_max_impact']:
                 impact_counts[snp['alt_max_impact']]['alt'] += 1
 
         ref_impacts = [impact_counts[i]['ref'] for i in range(1, 4)]
