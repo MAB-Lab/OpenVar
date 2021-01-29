@@ -544,7 +544,7 @@ class OPVReport:
                         'ref_hgvs_p': hgvs_p,
                         'ref_hgvs_c': hgvs_c,
                         'ref_errs': errs,
-                        'ref_max_impact': impact_levels[impact]
+                        'ref_max_impact': impact_levels[impact],
                     })
             elif '^' in feat_id:
                 atts['in_alt'] = 'true'
@@ -574,6 +574,8 @@ def is_synonymous(hgvs_p):
 def parse_feat_id(feat_id, gene_dict=None):
     if '^' in feat_id:
         trxpt, acc = feat_id.split('^')
+    if acc.count('_')>1:
+        acc = '_'.join(acc.split('_')[:2])
     return {'alt_trxpt_acc': trxpt, 'alt_prot_acc': acc, 'gene': prot_gene_dict[acc]}
 
 
