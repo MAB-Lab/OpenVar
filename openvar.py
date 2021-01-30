@@ -270,8 +270,8 @@ class OPVReport:
         self.study_name = self.opv.vcf.study_name
         self.parse_annOnePerLine()
         print('annOnePerLine parsed.')
-	self.analyze_all_variants()
-	print('All variants analyzed')
+        self.analyze_all_variants()
+        print('All variants analyzed')
 
 
     def aggregate_annotated_vcf(self):
