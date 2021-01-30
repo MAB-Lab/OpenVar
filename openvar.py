@@ -299,7 +299,7 @@ class OPVReport:
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
 	self.analyze_all_variants()
         cols = self.analyzed_variants[0].keys()
-        with open(max_impact_file_path) as tab_file:
+        with open(max_impact_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
             writer.writerow(cols)
             for row in self.analyzed_variants:
