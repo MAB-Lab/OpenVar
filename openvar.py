@@ -270,6 +270,9 @@ class OPVReport:
         self.study_name = self.opv.vcf.study_name
         self.parse_annOnePerLine()
         print('annOnePerLine parsed.')
+	self.analyze_all_variants()
+	print('All variants analyzed')
+
 
     def aggregate_annotated_vcf(self):
         split_ann_vcfs = []
@@ -297,7 +300,6 @@ class OPVReport:
                 writer.writerow(row.values())
 
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
-	self.analyze_all_variants()
         cols = self.analyzed_variants[0].keys()
         with open(max_impact_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
