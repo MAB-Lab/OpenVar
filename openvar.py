@@ -307,6 +307,10 @@ class OPVReport:
             for row in self.analyzed_variants:
                 writer.writerow(row.values())
 
+    def dump_to_file(var, filename):
+        with open(filename, 'w') as f:
+            f.write(json.dumps(var, indent=2))
+
     def compute_summary_stats(self):
         # overall summary
         prot_counts = {
@@ -322,6 +326,7 @@ class OPVReport:
 
         # gene level
         gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
+        dump_to_file(gene_snps_grp, 'var_error.json')
         gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in
                          itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
         gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
