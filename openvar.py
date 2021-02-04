@@ -11,6 +11,7 @@ import numpy as np
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
+import json
 
 maxInt = sys.maxsize
 while True:
@@ -21,9 +22,9 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 
-hg38_genome = pyfaidx.Fasta('/home/xroucou_group/genomes/human/GRCh38/complete-genome.fa', as_raw=True)
-prot_gene_dict = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/OP1.6_prot_gene_dict.pkl', 'rb'))
-gene_lenghts = pickle.load(open('/home/xroucou_group/echange_de_fichiers/OPV_data/gene_lenghts.pkl', 'rb'))
+hg38_genome = pyfaidx.Fasta('/shared-genomes-folder/human/GRCh38/complete-genome.fa', as_raw=True, rebuild=False)
+prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
+gene_lenghts = pickle.load(open('/open-var-deposit/gene_lenghts.pkl', 'rb'))
 
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
 chrom_set = set(chrom_names)
@@ -272,6 +273,9 @@ class OPVReport:
         self.study_name = self.opv.vcf.study_name
         self.parse_annOnePerLine()
         print('annOnePerLine parsed.')
+        self.analyze_all_variants()
+        print('All variants analyzed')
+
 
     def aggregate_annotated_vcf(self):
         split_ann_vcfs = []
@@ -300,11 +304,15 @@ class OPVReport:
 
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
         cols = self.analyzed_variants[0].keys()
-        with open(max_impact_file_path) as tab_file:
+        with open(max_impact_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
             writer.writerow(cols)
             for row in self.analyzed_variants:
                 writer.writerow(row.values())
+
+    def dump_to_file(self, var, filename):
+        with open(filename, 'w') as f:
+            f.write(json.dumps(var, indent=2))
 
     def compute_summary_stats(self):
         # overall summary
@@ -321,6 +329,7 @@ class OPVReport:
 
         # gene level
         gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
+        self.dump_to_file(gene_snps_grp, 'var_error.json')
         gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in
                          itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
         gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
@@ -486,6 +495,8 @@ class OPVReport:
         for snp in itt.groupby(snps, key=lambda x: x[0]):
             analyzed_variants.append(self.analyze_variant(*snp))
         self.analyzed_variants = analyzed_variants
+        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+            raise Exception('All genes are null!')
 
     def parse_annOnePerLine(self):
         annOnePerLines = []
