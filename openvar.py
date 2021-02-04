@@ -11,6 +11,7 @@ import numpy as np
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
+
 maxInt = sys.maxsize
 while True:
     try:
@@ -30,7 +31,10 @@ accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
-
+annotation_build = {
+    'OP_Ens' : 'GRCh38.95_refAlt_chr{chrom_name}',
+    'OP_Ref' : 'GRCh38.p12_chr{chrom_name}'
+}
 
 class SeqStudy:
     def __init__(self, data_dir, file_name, study_name, results_dir, genome_version, verbose=False):
@@ -167,8 +171,7 @@ class OpenVar:
         self.snpeff_jar = os.path.join(snpeff_path, 'snpEff.jar')
         self.snpsift_jar = os.path.join(snpeff_path, 'SnpSift.jar')
         self.verbose = False
-        # make dict annotation -> build
-        self.snpeff_build = 'GRCh38.95_refAlt_chr{chrom_name}'
+        self.snpeff_build = annotation_build[annotation]
         self.vcf = vcf
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
