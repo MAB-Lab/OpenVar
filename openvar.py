@@ -285,8 +285,10 @@ class OPVReport:
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
         self.specie = opv.specie
+        self.annOnePerLine_files = []
         self.parse_annOnePerLine()
         print('annOnePerLine parsed.')
+        self.analyzed_variants = []
         self.analyze_all_variants()
         print('All variants analyzed')
 
@@ -496,42 +498,42 @@ class OPVReport:
             'cnt_snps': cnt_snps,
             'cnt_alt_snps': cnt_alt_snps,
             'ratio_higher_alt': cnt_alt_snps / cnt_snps,
-            'alts': alts
+            'alts': alts,
         }
 
     def analyze_all_variants(self):
         snps = []
+        fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
+        for annOnePerLine_file in self.annOnePerLine_files:
+
         for snp in self.annOnePerLine:
             var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
-            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA'
-                               for x in ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']])
+            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA' for x in fields])
             snps.append(eff)
-        analyzed_variants = []
+
         for snp in itt.groupby(snps, key=lambda x: x[0]):
-            analyzed_variants.append(self.analyze_variant(*snp))
-        self.analyzed_variants = analyzed_variants
-        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+            self.analyzed_variants.append(self.analyze_variant(*snp))
+
+        if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
             raise Exception('All genes are null!')
 
-    def parse_annOnePerLine(self):
-        annOnePerLines = []
+    def list_annOnePerLine_files(self):
         for f in os.listdir(self.opv.vcf.vcf_splits_dir):
             fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
             if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
-                annOnePerLines.append(fpath)
-        lines = []
-        for annOnePerLine in annOnePerLines:
-            with open(annOnePerLine, 'r') as f:
-                for n, l in enumerate(f):
-                    ls = l.strip().split('\t')
-                    if n == 0:
-                        keys = ls
-                        continue
-                    line = dict(zip(keys, ls))
-                    if 'ANN[*].EFFECT' in line:
-                        line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
-                    lines.append(line)
-        self.annOnePerLine = lines
+                self.annOnePerLine_files.append(fpath)
+
+    def parse_annOnePerLine(self, annOnePerLine_file):
+        with open(annOnePerLine_file, 'r') as f:
+            for n, l in enumerate(f):
+                ls = l.strip().split('\t')
+                if n == 0:
+                    keys = ls
+                    continue
+                line = dict(zip(keys, ls))
+                if 'ANN[*].EFFECT' in line:
+                    line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
+                yield line
 
     def analyze_variant(self, variant, effs):
         atts = {
