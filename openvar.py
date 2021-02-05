@@ -22,10 +22,14 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 
-hg38_genome = pyfaidx.Fasta('/shared-genomes-folder/human/GRCh38/complete-genome.fa', as_raw=True, rebuild=False)
-prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
+#prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
 gene_lenghts = pickle.load(open('/open-var-deposit/gene_lenghts.pkl', 'rb'))
-
+genome_fastas = {
+    'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
+    'mouse': '/shared-genomes-folder/human/GRCm38/complete-genome.fa',
+    'rat': '',
+    'droso': '',
+}
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
 chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
@@ -33,14 +37,16 @@ vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
 annotation_build = {
-    'OP_Ens' : 'GRCh38.95_refAlt_chr{chrom_name}',
-    'OP_Ref' : 'GRCh38.p12_chr{chrom_name}'
+    'OP_Ens': 'GRCh38.95_refAlt_chr{chrom_name}',
+    'OP_Ref': 'GRCh38.p12_chr{chrom_name}',
 }
 
 class SeqStudy:
-    def __init__(self, data_dir, file_name, study_name, results_dir, genome_version, verbose=False):
+    def __init__(self, data_dir, file_name, study_name, results_dir, specie, genome_version, verbose=False):
         self.verbose = verbose
         self.data_dir = mkdir(data_dir)
+        self.genome_version = genome_version
+        self.specie = specie
         self.results_dir = mkdir(results_dir)
         self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
         self.output_dir = mkdir(os.path.join(self.results_dir, 'output'))
@@ -105,10 +111,11 @@ class SeqStudy:
 
     def check_altref_order(self):
         vcf_ls = []
+        genome = pyfaidx.Fasta(genome_fastas[self.specie], as_raw=True, rebuild=False)
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
             snp = dict(zip(vcf_fields, snp))
-            ref = hg38_genome[snp['CHROM']][snp['POS'] - 1]
+            ref = genome[snp['CHROM']][snp['POS'] - 1]
             if snp['REF'] != ref:
                 if snp['ALT'] != ref:
                     self.warnings['invalid alleles'].append(snp_line)
@@ -546,7 +553,7 @@ class OPVReport:
                     if '@' in feat_id:
                         ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
                         ref_prot_acc = ref_prot_acc.split('.')[0]
-                        gene = prot_gene_dict[ref_prot_acc]
+                        #gene = prot_gene_dict[ref_prot_acc]
                     else:
                         ref_trxpt_acc = feat_id.split('.')[0]
                         ref_prot_acc = ''
@@ -565,6 +572,7 @@ class OPVReport:
                     alt_feat_dict = parse_feat_id(feat_id)
                     atts.update(alt_feat_dict)
                     atts.update({
+                        'gene': gene,
                         'alt_hgvs_p': hgvs_p,
                         'alt_hgvs_c': hgvs_c,
                         'alt_errs': errs,
@@ -589,7 +597,7 @@ def parse_feat_id(feat_id, gene_dict=None):
         trxpt, acc = feat_id.split('^')
     if acc.count('_')>1:
         acc = '_'.join(acc.split('_')[:2])
-    return {'alt_trxpt_acc': trxpt, 'alt_prot_acc': acc, 'gene': prot_gene_dict[acc]}
+    return {'alt_trxpt_acc': trxpt, 'alt_prot_acc': acc}
 
 
 def mkdir(path):
