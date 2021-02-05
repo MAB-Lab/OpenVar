@@ -25,15 +25,14 @@ gene_len_files = {
     'human': '/open-var-deposit/data/human/gene_lenghts.pkl',
     'mouse': '/open-var-deposit/data/mouse/gene_lenghts.pkl',
     'rat': '/open-var-deposit/data/rat/gene_lenghts.pkl',
-    'droso': '/open-var-deposit/data/droso/gene_lenghts.pkl',
+    'fruit fly': '/open-var-deposit/data/droso/gene_lenghts.pkl',
 }
 genome_fastas = {
     'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
     'mouse': '/shared-genomes-folder/human/GRCm38/complete-genome.fa',
     'rat': '',
-    'droso': '',
+    'fruit fly': '',
 }
-
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
 chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
@@ -41,8 +40,9 @@ vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
 annotation_build = {
-    'OP_Ens': 'GRCh38.95_refAlt_chr{chrom_name}',
-    'OP_Ref': 'GRCh38.p12_chr{chrom_name}',
+    ('human', 'OP_Ens'): 'GRCh38.95_refAlt_chr{chrom_name}',
+    ('human', 'OP_Ref'): 'GRCh38.p12_chr{chrom_name}',
+    ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
 }
 
 class SeqStudy:
@@ -183,9 +183,9 @@ class OpenVar:
         self.snpeff_jar = os.path.join(snpeff_path, 'snpEff.jar')
         self.snpsift_jar = os.path.join(snpeff_path, 'SnpSift.jar')
         self.verbose = False
-        self.snpeff_build = annotation_build[annotation]
         self.vcf = vcf
         self.specie = vcf.specie
+        self.snpeff_build = annotation_build[(self.specie, annotation)]
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
 
@@ -532,7 +532,7 @@ class OPVReport:
                     lines.append(line)
         self.annOnePerLine = lines
 
-    def analyze_variant(self, variant, effs, debug=False):
+    def analyze_variant(self, variant, effs):
         atts = {
             'hg38_name': variant,
             'in_ref': 'false',
@@ -553,14 +553,12 @@ class OPVReport:
         }
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
-            #if hgvs_p:
             if 'ENST' in feat_id and '^' not in feat_id:
                 atts['in_ref'] = 'true'
                 if impact_levels[impact] > atts['ref_max_impact']:
                     if '@' in feat_id:
                         ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
                         ref_prot_acc = ref_prot_acc.split('.')[0]
-                        #gene = prot_gene_dict[ref_prot_acc]
                     else:
                         ref_trxpt_acc = feat_id.split('.')[0]
                         ref_prot_acc = ''
@@ -599,7 +597,7 @@ def is_synonymous(hgvs_p):
         return False
 
 
-def parse_feat_id(feat_id, gene_dict=None):
+def parse_feat_id(feat_id):
     if '^' in feat_id:
         trxpt, acc = feat_id.split('^')
     if acc.count('_')>1:
