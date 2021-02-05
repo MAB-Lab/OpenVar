@@ -21,15 +21,19 @@ while True:
     except OverflowError:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
-
-#prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
-gene_lenghts = pickle.load(open('/open-var-deposit/gene_lenghts.pkl', 'rb'))
+gene_len_files = {
+    'human': '/open-var-deposit/data/human/gene_lenghts.pkl',
+    'mouse': '/open-var-deposit/data/mouse/gene_lenghts.pkl',
+    'rat': '/open-var-deposit/data/rat/gene_lenghts.pkl',
+    'droso': '/open-var-deposit/data/droso/gene_lenghts.pkl',
+}
 genome_fastas = {
     'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
     'mouse': '/shared-genomes-folder/human/GRCm38/complete-genome.fa',
     'rat': '',
     'droso': '',
 }
+
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
 chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
@@ -181,6 +185,7 @@ class OpenVar:
         self.verbose = False
         self.snpeff_build = annotation_build[annotation]
         self.vcf = vcf
+        self.specie = vcf.specie
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
 
@@ -278,6 +283,7 @@ class OPVReport:
         self.vcf = opv.vcf
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
+        self.specie = opv.specie
         self.parse_annOnePerLine()
         print('annOnePerLine parsed.')
         self.analyze_all_variants()
@@ -322,6 +328,7 @@ class OPVReport:
             f.write(json.dumps(var, indent=2))
 
     def compute_summary_stats(self):
+        gene_lenghts = pickle.load(open(gene_len_files[self.specie], 'rb'))
         # overall summary
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
