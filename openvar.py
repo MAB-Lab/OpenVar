@@ -201,7 +201,7 @@ class OpenVar:
 
     def run_snpeff(self, chrom_name):
         snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
-        if chrom_name not in self.vcf.vcf_split_paths:
+        if chrom_name not in self.vcf.vcf_split_paths and self.verbose:
             print('no variant in chromosome {}'.format(chrom_name))
             return True
         vcf_path = os.path.join(self.vcf.vcf_split_paths[chrom_name])
@@ -553,7 +553,7 @@ class OPVReport:
         }
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
-            if 'ENST' in feat_id and '^' not in feat_id:
+            if feat_id_is_ref(feat_id):
                 atts['in_ref'] = 'true'
                 if impact_levels[impact] > atts['ref_max_impact']:
                     if '@' in feat_id:
@@ -603,6 +603,12 @@ def parse_feat_id(feat_id):
     if acc.count('_')>1:
         acc = '_'.join(acc.split('_')[:2])
     return {'alt_trxpt_acc': trxpt, 'alt_prot_acc': acc}
+
+
+def feat_id_is_ref(feat_id):
+    if 'IP_' not in feat_id and '^' not in feat_id:
+        return True
+    return False
 
 
 def mkdir(path):
