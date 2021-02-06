@@ -286,7 +286,7 @@ class OPVReport:
         self.study_name = self.opv.vcf.study_name
         self.specie = opv.specie
         self.annOnePerLine_files = []
-        self.parse_annOnePerLine()
+        #self.parse_annOnePerLine()
         print('annOnePerLine parsed.')
         self.analyzed_variants = []
         self.analyze_all_variants()
@@ -502,17 +502,15 @@ class OPVReport:
         }
 
     def analyze_all_variants(self):
-        snps = []
-        fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
         for annOnePerLine_file in self.annOnePerLine_files:
+            snp_effs = self.parse_annOnePerLine(annOnePerLine_file)
+            for snp_eff in itt.groupby(snp_effs, key=lambda x: x[0]):
+                self.analyzed_variants.append(self.analyze_variant(*snp_eff))
 
-        for snp in self.annOnePerLine:
-            var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
-            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA' for x in fields])
-            snps.append(eff)
-
-        for snp in itt.groupby(snps, key=lambda x: x[0]):
-            self.analyzed_variants.append(self.analyze_variant(*snp))
+#        for snp in self.annOnePerLine:
+#            var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
+#            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA' for x in fields])
+#            snps.append(eff)
 
         if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
             raise Exception('All genes are null!')
@@ -524,6 +522,7 @@ class OPVReport:
                 self.annOnePerLine_files.append(fpath)
 
     def parse_annOnePerLine(self, annOnePerLine_file):
+        fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
         with open(annOnePerLine_file, 'r') as f:
             for n, l in enumerate(f):
                 ls = l.strip().split('\t')
@@ -533,7 +532,9 @@ class OPVReport:
                 line = dict(zip(keys, ls))
                 if 'ANN[*].EFFECT' in line:
                     line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
-                yield line
+                var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT']])
+                eff = (var_name, *[line['ANN[*].' + x] if 'ANN[*].' + x in line else 'NA' for x in fields])
+                yield eff
 
     def analyze_variant(self, variant, effs):
         atts = {
