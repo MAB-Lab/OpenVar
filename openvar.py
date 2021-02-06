@@ -311,7 +311,7 @@ class OPVReport:
         with open(annOnePerLine_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
             for annOnePerLine_file in self.annOnePerLine_files:
-                for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file)):
+                for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file, as_dict=True)):
                     if n == 0:
                         writer.writerow(row.keys())
                     writer.writerow(row.values())
@@ -521,7 +521,7 @@ class OPVReport:
                 annOnePerLine_files.append(fpath)
         return annOnePerLine_files
 
-    def parse_annOnePerLine(self, annOnePerLine_file):
+    def parse_annOnePerLine(self, annOnePerLine_file, as_dict=False):
         fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
         with open(annOnePerLine_file, 'r') as f:
             for n, l in enumerate(f):
@@ -534,7 +534,10 @@ class OPVReport:
                     line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
                 var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT']])
                 eff = (var_name, *[line['ANN[*].' + x] if 'ANN[*].' + x in line else 'NA' for x in fields])
-                yield eff
+                if as_dict:
+                    yield line
+                else:
+                    yield eff
 
     def analyze_variant(self, variant, effs):
         atts = {
