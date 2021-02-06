@@ -308,12 +308,12 @@ class OPVReport:
 
     def write_tabular(self):
         annOnePerLine_file_path = os.path.join(self.output_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
-        cols = self.annOnePerLine[0].keys()
         with open(annOnePerLine_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
-            writer.writerow(cols)
             for annOnePerLine_file in self.annOnePerLine_files:
-                for row in self.parse_annOnePerLine(annOnePerLine_file):
+                for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file)):
+                    if n == 0:
+                        writer.writerow(row.keys())
                     writer.writerow(row.values())
 
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
