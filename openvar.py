@@ -279,8 +279,9 @@ class OpenVar:
 
 
 class OPVReport:
-    def __init__(self, opv):
+    def __init__(self, opv, verbose=False):
         self.opv = opv
+        self.verbose = verbose
         self.vcf = opv.vcf
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
@@ -290,7 +291,7 @@ class OPVReport:
         #print('annOnePerLine parsed.')
         self.analyzed_variants = []
         #self.analyze_all_variants()
-        print('All variants analyzed')
+        #print('All variants analyzed')
 
 
     def aggregate_annotated_vcf(self):
@@ -503,8 +504,10 @@ class OPVReport:
 
     def analyze_all_variants(self):
         for annOnePerLine_file in self.annOnePerLine_files:
+            if self.verbose:
+                print(annOnePerLine_file)
             snp_effs = self.parse_annOnePerLine(annOnePerLine_file)
-            for snp_eff in itt.groupby(snp_effs, key=lambda x: x[0]):
+            for snp_eff in itt.groupby(sorted(snp_effs, key=lambda x: x[0]), key=lambda x: x[0]):
                 self.analyzed_variants.append(self.analyze_variant(*snp_eff))
 
 #        for snp in self.annOnePerLine:
