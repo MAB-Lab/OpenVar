@@ -285,7 +285,7 @@ class OPVReport:
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
         self.specie = opv.specie
-        self.annOnePerLine_files = []
+        self.annOnePerLine_files = self.list_annOnePerLine_files()
         #self.parse_annOnePerLine()
         #print('annOnePerLine parsed.')
         self.analyzed_variants = []
@@ -516,10 +516,12 @@ class OPVReport:
         #    raise Exception('All genes are null!')
 
     def list_annOnePerLine_files(self):
+        annOnePerLine_files = []
         for f in os.listdir(self.opv.vcf.vcf_splits_dir):
             fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
             if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
-                self.annOnePerLine_files.append(fpath)
+                annOnePerLine_files.append(fpath)
+        return annOnePerLine_files
 
     def parse_annOnePerLine(self, annOnePerLine_file):
         fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
