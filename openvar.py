@@ -289,7 +289,7 @@ class OPVReport:
         #self.parse_annOnePerLine()
         #print('annOnePerLine parsed.')
         self.analyzed_variants = []
-        self.analyze_all_variants()
+        #self.analyze_all_variants()
         print('All variants analyzed')
 
 
