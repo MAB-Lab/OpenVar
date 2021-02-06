@@ -287,7 +287,7 @@ class OPVReport:
         self.specie = opv.specie
         self.annOnePerLine_files = []
         #self.parse_annOnePerLine()
-        print('annOnePerLine parsed.')
+        #print('annOnePerLine parsed.')
         self.analyzed_variants = []
         self.analyze_all_variants()
         print('All variants analyzed')
@@ -512,8 +512,8 @@ class OPVReport:
 #            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA' for x in fields])
 #            snps.append(eff)
 
-        if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
-            raise Exception('All genes are null!')
+        #if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
+        #    raise Exception('All genes are null!')
 
     def list_annOnePerLine_files(self):
         for f in os.listdir(self.opv.vcf.vcf_splits_dir):
