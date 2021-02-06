@@ -287,11 +287,7 @@ class OPVReport:
         self.study_name = self.opv.vcf.study_name
         self.specie = opv.specie
         self.annOnePerLine_files = self.list_annOnePerLine_files()
-        #self.parse_annOnePerLine()
-        #print('annOnePerLine parsed.')
-        self.analyzed_variants = []
-        #self.analyze_all_variants()
-        #print('All variants analyzed')
+        self.analyzed_variants = self.analyze_all_variants()
 
 
     def aggregate_annotated_vcf(self):
@@ -316,8 +312,9 @@ class OPVReport:
         with open(annOnePerLine_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
             writer.writerow(cols)
-            for row in self.annOnePerLine:
-                writer.writerow(row.values())
+            for annOnePerLine_file in self.annOnePerLine_files:
+                for row in self.parse_annOnePerLine(annOnePerLine_file):
+                    writer.writerow(row.values())
 
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
         cols = self.analyzed_variants[0].keys()
@@ -503,20 +500,18 @@ class OPVReport:
         }
 
     def analyze_all_variants(self):
+        analyzed_variants = []
         for annOnePerLine_file in self.annOnePerLine_files:
             if self.verbose:
                 print(annOnePerLine_file)
             snp_effs = self.parse_annOnePerLine(annOnePerLine_file)
             for snp_eff in itt.groupby(sorted(snp_effs, key=lambda x: x[0]), key=lambda x: x[0]):
-                self.analyzed_variants.append(self.analyze_variant(*snp_eff))
+                analyzed_variants.append(self.analyze_variant(*snp_eff))
 
-#        for snp in self.annOnePerLine:
-#            var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
-#            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA' for x in fields])
-#            snps.append(eff)
-
-        #if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
-        #    raise Exception('All genes are null!')
+        if all([snp['gene'] == 'null' for snp in analyzed_variants]):
+            raise Exception('All genes are null!')
+        print('All variants analyzed')
+        return analyzed_variants
 
     def list_annOnePerLine_files(self):
         annOnePerLine_files = []
