@@ -327,7 +327,7 @@ class OPVReport:
 
         # gene level
         if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
-            gene_snp_rate = ["No gene consequences for the submitted variants."]
+            gene_snp_rate = []
         else:
             gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
             #self.dump_to_file(gene_snps_grp, 'var_error.json')
