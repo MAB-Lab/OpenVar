@@ -326,57 +326,61 @@ class OPVReport:
         snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names]
 
         # gene level
-        gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
-        self.dump_to_file(gene_snps_grp, 'var_error.json')
-        gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in
-                         itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
-        gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
+        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+            gene_snp_rate = ["No gene consequences for the submitted variants."]
+        else:
+            gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
+            #self.dump_to_file(gene_snps_grp, 'var_error.json')
+            gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+            gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
 
-        fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
-        genes, rates = zip(*gene_snp_rate[:10])  # top ten
-        self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
+            fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
+            genes, rates = zip(*gene_snp_rate[:10])  # top ten
+            self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
         # protein level
-        count_higest = {
-            'alt': sum([snp['alt_max_impact'] > snp['ref_max_impact'] for snp in self.analyzed_variants]),
-            'ref': sum([snp['ref_max_impact'] > snp['alt_max_impact'] for snp in self.analyzed_variants])
-        }
+        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+            count_highest= {'alt': 0, 'ref': 0}
+            impact_counts = {}
+            impact_ann = {}
+        else:
+            count_highest = {'alt': sum([snp['alt_max_impact'] > snp['ref_max_impact'] for snp in self.analyzed_variants]), 
+                    'ref': sum([snp['ref_max_impact'] > snp['alt_max_impact'] for snp in self.analyzed_variants])}
 
-        impacts = {
-            'ref_all': [x['ref_max_impact'] for x in self.analyzed_variants if x['ref_max_impact'] > -1],
-            'max_all': [max([snp['alt_max_impact'], snp['ref_max_impact']]) for snp in self.analyzed_variants if
-                        snp['alt_max_impact'] > -1 or snp['ref_max_impact'] > -1],
-        }
+            impacts = {'ref_all': [x['ref_max_impact'] for x in self.analyzed_variants if x['ref_max_impact'] > -1],
+                    'max_all': [max([snp['alt_max_impact'], snp['ref_max_impact']]) for snp in self.analyzed_variants if snp['alt_max_impact'] > -1 or snp['ref_max_impact'] > -1]}
 
-        max_all = dict(zip(range(1, 4), [0]*3))
-        max_all.update(dict(Counter(impacts['max_all'])))
+            max_all = dict(zip(range(1, 4), [0]*3))
+            max_all.update(dict(Counter(impacts['max_all'])))
 
-        ref_all = dict(zip(range(1, 4), [0]*3))
-        ref_all.update(dict(Counter(impacts['ref_all'])))
+            ref_all = dict(zip(range(1, 4), [0]*3))
+            ref_all.update(dict(Counter(impacts['ref_all'])))
 
-        impact_ann = {'max_all':max_all, 'ref_all':ref_all}
-        fc = {i: max_all[i] / ref_all[i] if ref_all[i] > 0 else 0. for i in range(1, 4)}
+            impact_ann = {'max_all':max_all, 'ref_all':ref_all}
+            fc = {i: max_all[i] / ref_all[i] if ref_all[i] > 0 else 0. for i in range(1, 4)}
 
-        fname = os.path.join(self.output_dir, '{}_impact_foldchange.svg'.format(self.study_name))
-        self.generate_bar_chart(fc, 'fold_change', fname)
+            fname = os.path.join(self.output_dir, '{}_impact_foldchange.svg'.format(self.study_name))
+            self.generate_bar_chart(fc, 'fold_change', fname)
 
-        impact_counts = dict(zip(range(1, 4), [{'alt': 0, 'ref': 0}, {'alt': 0, 'ref': 0}, {'alt': 0, 'ref': 0}]))
-        for snp in self.analyzed_variants:
-            if snp['ref_max_impact'] == -1 and snp['alt_max_impact'] == -1:
-                continue
-            if snp['ref_max_impact'] and snp['ref_max_impact'] >= snp['alt_max_impact']:
-                impact_counts[snp['ref_max_impact']]['ref'] += 1
-            elif snp['alt_max_impact'] and snp['alt_max_impact'] > snp['ref_max_impact']:
-                impact_counts[snp['alt_max_impact']]['alt'] += 1
+            impact_counts = dict(zip(range(1, 4), [{'alt': 0, 'ref': 0}, {'alt': 0, 'ref': 0}, {'alt': 0, 'ref': 0}]))
+            for snp in self.analyzed_variants:
+                if snp['ref_max_impact'] == -1 and snp['alt_max_impact'] == -1:
+                    continue
+                if snp['ref_max_impact'] and snp['ref_max_impact'] >= snp['alt_max_impact']:
+                    impact_counts[snp['ref_max_impact']]['ref'] += 1
+                elif snp['alt_max_impact'] and snp['alt_max_impact'] > snp['ref_max_impact']:
+                    impact_counts[snp['alt_max_impact']]['alt'] += 1
 
-        ref_impacts = [impact_counts[i]['ref'] for i in range(1, 4)]
-        alt_impacts = [impact_counts[i]['alt'] for i in range(1, 4)]
-        fname = os.path.join(self.output_dir, '{}_var_per_impact.svg'.format(self.study_name))
-        self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
+            ref_impacts = [impact_counts[i]['ref'] for i in range(1, 4)]
+            alt_impacts = [impact_counts[i]['alt'] for i in range(1, 4)]
+            fname = os.path.join(self.output_dir, '{}_var_per_impact.svg'.format(self.study_name))
+            self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
 
         # hotspots on alts
-        gene_altsnp_rate = {gene: self.count_altsnp_ratio(list(grp)) for gene, grp in
-                            itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+            gene_altsnp_rate = {'All nulls': 'No gene consequences for the submitted variants.'}
+        else:
+            gene_altsnp_rate = {gene: self.count_altsnp_ratio(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
 
         self.summary = {
 	        'study_name': self.study_name,
@@ -391,8 +395,8 @@ class OPVReport:
             'Chromosome Level': snps_per_chroms,
             'Gene Level': gene_snp_rate,
             'Protein Level': {
-                'Number of variants with highest impact on reference proteins': count_higest['ref'],
-                'Number of variants with highest impact on alternative proteins': count_higest['alt'],
+                'Number of variants with highest impact on reference proteins': count_highest['ref'],
+                'Number of variants with highest impact on alternative proteins': count_highest['alt'],
                 'Impact Counts': impact_counts,
                 'Impact Annotation':impact_ann,
                 'Fold Change': fc,
