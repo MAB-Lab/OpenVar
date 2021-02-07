@@ -326,7 +326,7 @@ class OPVReport:
         snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names]
 
         # gene level
-        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+        if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
             gene_snp_rate = ["No gene consequences for the submitted variants."]
         else:
             gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
@@ -339,7 +339,7 @@ class OPVReport:
             self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
         # protein level
-        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+        if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
             count_highest= {'alt': 0, 'ref': 0}
             impact_counts = {}
             impact_ann = {}
@@ -377,7 +377,7 @@ class OPVReport:
             self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
 
         # hotspots on alts
-        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+        if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
             gene_altsnp_rate = {'All nulls': 'No gene consequences for the submitted variants.'}
         else:
             gene_altsnp_rate = {gene: self.count_altsnp_ratio(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
