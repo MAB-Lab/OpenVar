@@ -405,10 +405,10 @@ class OPVReport:
             'Mutational hotspots on altORFs': gene_altsnp_rate,
         }
 
-        fname = os.path.join(self.output_dir, '{}_hotspots_barchart.svg'.format(self.study_name))
-        data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in
-                     self.summary['Mutational hotspots on altORFs'].items()])
-        self.generate_bar_chart(data, 'hotspots_bar', fname)
+        if len(self.analyzed_variants) != len([x for x in self.analyzed_variants if x['gene'] == 'null']):
+            fname = os.path.join(self.output_dir, '{}_hotspots_barchart.svg'.format(self.study_name))
+            data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
+            self.generate_bar_chart(data, 'hotspots_bar', fname)
 
         fname = os.path.join(self.output_dir, 'summary.pkl')
         pickle.dump(self.summary, open(fname, 'wb'))
