@@ -317,7 +317,7 @@ class OPVReport:
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
             'iso': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'II_' in snp['alt_prot_acc'])),
-            'ref': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants))
+            'ref': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants) if snp['ref_prot_acc'] != 'null')
         }
 
         # chrom level
