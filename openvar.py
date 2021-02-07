@@ -497,8 +497,8 @@ class OPVReport:
         for snp in itt.groupby(snps, key=lambda x: x[0]):
             analyzed_variants.append(self.analyze_variant(*snp))
         self.analyzed_variants = analyzed_variants
-        if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
-            raise Exception('All genes are null!')
+        #if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
+            #raise Exception('All genes are null!')
 
     def parse_annOnePerLine(self):
         annOnePerLines = []
