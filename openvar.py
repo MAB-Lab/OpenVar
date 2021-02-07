@@ -343,6 +343,7 @@ class OPVReport:
             count_highest= {'alt': 0, 'ref': 0}
             impact_counts = {}
             impact_ann = {}
+            fc = {}
         else:
             count_highest = {'alt': sum([snp['alt_max_impact'] > snp['ref_max_impact'] for snp in self.analyzed_variants]), 
                     'ref': sum([snp['ref_max_impact'] > snp['alt_max_impact'] for snp in self.analyzed_variants])}
