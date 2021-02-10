@@ -13,6 +13,7 @@ from matplotlib import pyplot as plt
 from pyliftover import LiftOver
 import json
 
+
 maxInt = sys.maxsize
 while True:
     try:
