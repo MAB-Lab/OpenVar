@@ -30,7 +30,7 @@ gene_len_files = {
 }
 genome_fastas = {
     'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
-    'mouse': '/shared-genomes-folder/human/GRCm38/complete-genome.fa',
+    'mouse': '/shared-genomes-folder/mouse/GRCm38/complete-genome.fa',
     'rat': '',
     'fruit fly': '',
 }
