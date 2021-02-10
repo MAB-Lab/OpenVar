@@ -21,23 +21,36 @@ while True:
     except OverflowError:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
-
-hg38_genome = pyfaidx.Fasta('/shared-genomes-folder/human/GRCh38/complete-genome.fa', as_raw=True, rebuild=False)
-prot_gene_dict = pickle.load(open('/open-var-deposit/OP1.6_prot_gene_dict.pkl', 'rb'))
-gene_lenghts = pickle.load(open('/open-var-deposit/gene_lenghts.pkl', 'rb'))
-
+gene_len_files = {
+    'human': '/open-var-deposit/data/human/gene_lenghts.pkl',
+    'mouse': '/open-var-deposit/data/mouse/gene_lenghts.pkl',
+    'rat': '/open-var-deposit/data/rat/gene_lenghts.pkl',
+    'fruit fly': '/open-var-deposit/data/droso/gene_lenghts.pkl',
+}
+genome_fastas = {
+    'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
+    'mouse': '/shared-genomes-folder/human/GRCm38/complete-genome.fa',
+    'rat': '',
+    'fruit fly': '',
+}
 chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
 chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
-
+annotation_build = {
+    ('human', 'OP_Ens'): 'GRCh38.95_refAlt_chr{chrom_name}',
+    ('human', 'OP_Ref'): 'GRCh38.p12_chr{chrom_name}',
+    ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
+}
 
 class SeqStudy:
-    def __init__(self, data_dir, file_name, study_name, results_dir, genome_version, verbose=False):
+    def __init__(self, data_dir, file_name, study_name, results_dir, specie, genome_version, verbose=False):
         self.verbose = verbose
         self.data_dir = mkdir(data_dir)
+        self.genome_version = genome_version
+        self.specie = specie
         self.results_dir = mkdir(results_dir)
         self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
         self.output_dir = mkdir(os.path.join(self.results_dir, 'output'))
@@ -102,10 +115,11 @@ class SeqStudy:
 
     def check_altref_order(self):
         vcf_ls = []
+        genome = pyfaidx.Fasta(genome_fastas[self.specie], as_raw=True, rebuild=False)
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
             snp = dict(zip(vcf_fields, snp))
-            ref = hg38_genome[snp['CHROM']][snp['POS'] - 1]
+            ref = genome[snp['CHROM']][snp['POS'] - 1]
             if snp['REF'] != ref:
                 if snp['ALT'] != ref:
                     self.warnings['invalid alleles'].append(snp_line)
@@ -169,9 +183,9 @@ class OpenVar:
         self.snpeff_jar = os.path.join(snpeff_path, 'snpEff.jar')
         self.snpsift_jar = os.path.join(snpeff_path, 'SnpSift.jar')
         self.verbose = False
-        # make dict annotation -> build
-        self.snpeff_build = 'GRCh38.95_refAlt_chr{chrom_name}'
         self.vcf = vcf
+        self.specie = vcf.specie
+        self.snpeff_build = annotation_build[(self.specie, annotation)]
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
 
@@ -188,7 +202,8 @@ class OpenVar:
     def run_snpeff(self, chrom_name):
         snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
         if chrom_name not in self.vcf.vcf_split_paths:
-            print('no variant in chromosome {}'.format(chrom_name))
+            if self.verbose:
+                print('no variant in chromosome {}'.format(chrom_name))
             return True
         vcf_path = os.path.join(self.vcf.vcf_split_paths[chrom_name])
         vcf_ann_path = vcf_path.replace('.vcf', '.ann.vcf')
@@ -264,15 +279,15 @@ class OpenVar:
 
 
 class OPVReport:
-    def __init__(self, opv):
+    def __init__(self, opv, verbose=False):
         self.opv = opv
+        self.verbose = verbose
         self.vcf = opv.vcf
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
-        self.parse_annOnePerLine()
-        print('annOnePerLine parsed.')
-        self.analyze_all_variants()
-        print('All variants analyzed')
+        self.specie = opv.specie
+        self.annOnePerLine_files = self.list_annOnePerLine_files()
+        self.analyzed_variants = self.analyze_all_variants()
 
 
     def aggregate_annotated_vcf(self):
@@ -293,12 +308,13 @@ class OPVReport:
 
     def write_tabular(self):
         annOnePerLine_file_path = os.path.join(self.output_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
-        cols = self.annOnePerLine[0].keys()
         with open(annOnePerLine_file_path, 'w') as tab_file:
             writer = csv.writer(tab_file, delimiter='\t')
-            writer.writerow(cols)
-            for row in self.annOnePerLine:
-                writer.writerow(row.values())
+            for annOnePerLine_file in self.annOnePerLine_files:
+                for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file, as_dict=True)):
+                    if n == 0:
+                        writer.writerow(row.keys())
+                    writer.writerow(row.values())
 
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
         cols = self.analyzed_variants[0].keys()
@@ -313,6 +329,7 @@ class OPVReport:
             f.write(json.dumps(var, indent=2))
 
     def compute_summary_stats(self):
+        gene_lenghts = pickle.load(open(gene_len_files[self.specie], 'rb'))
         # overall summary
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
@@ -484,44 +501,50 @@ class OPVReport:
             'cnt_snps': cnt_snps,
             'cnt_alt_snps': cnt_alt_snps,
             'ratio_higher_alt': cnt_alt_snps / cnt_snps,
-            'alts': alts
+            'alts': alts,
         }
 
     def analyze_all_variants(self):
-        snps = []
-        for snp in self.annOnePerLine:
-            var_name = '_'.join([snp['CHROM'], snp['POS'], snp['REF'], snp['ALT']])
-            eff = (var_name, *[snp['ANN[*].'+x] if 'ANN[*].'+x in snp else 'NA'
-                               for x in ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']])
-            snps.append(eff)
         analyzed_variants = []
-        for snp in itt.groupby(snps, key=lambda x: x[0]):
-            analyzed_variants.append(self.analyze_variant(*snp))
-        self.analyzed_variants = analyzed_variants
-        #if len(analyzed_variants) == len([x for x in analyzed_variants if x['gene'] == 'null']):
-            #raise Exception('All genes are null!')
+        for annOnePerLine_file in self.annOnePerLine_files:
+            if self.verbose:
+                print(annOnePerLine_file)
+            snp_effs = self.parse_annOnePerLine(annOnePerLine_file)
+            for snp_eff in itt.groupby(sorted(snp_effs, key=lambda x: x[0]), key=lambda x: x[0]):
+                analyzed_variants.append(self.analyze_variant(*snp_eff))
 
-    def parse_annOnePerLine(self):
-        annOnePerLines = []
+        if all([snp['gene'] == 'null' for snp in analyzed_variants]):
+            raise Exception('All genes are null!')
+        print('All variants analyzed')
+        return analyzed_variants
+
+    def list_annOnePerLine_files(self):
+        annOnePerLine_files = []
         for f in os.listdir(self.opv.vcf.vcf_splits_dir):
             fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
             if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
-                annOnePerLines.append(fpath)
-        lines = []
-        for annOnePerLine in annOnePerLines:
-            with open(annOnePerLine, 'r') as f:
-                for n, l in enumerate(f):
-                    ls = l.strip().split('\t')
-                    if n == 0:
-                        keys = ls
-                        continue
-                    line = dict(zip(keys, ls))
-                    if 'ANN[*].EFFECT' in line:
-                        line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
-                    lines.append(line)
-        self.annOnePerLine = lines
+                annOnePerLine_files.append(fpath)
+        return annOnePerLine_files
 
-    def analyze_variant(self, variant, effs, debug=False):
+    def parse_annOnePerLine(self, annOnePerLine_file, as_dict=False):
+        fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
+        with open(annOnePerLine_file, 'r') as f:
+            for n, l in enumerate(f):
+                ls = l.strip().split('\t')
+                if n == 0:
+                    keys = ls
+                    continue
+                line = dict(zip(keys, ls))
+                if 'ANN[*].EFFECT' in line:
+                    line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
+                var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT']])
+                eff = (var_name, *[line['ANN[*].' + x] if 'ANN[*].' + x in line else 'NA' for x in fields])
+                if as_dict:
+                    yield line
+                else:
+                    yield eff
+
+    def analyze_variant(self, variant, effs):
         atts = {
             'hg38_name': variant,
             'in_ref': 'false',
@@ -542,14 +565,12 @@ class OPVReport:
         }
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
-            #if hgvs_p:
-            if 'ENST' in feat_id and '^' not in feat_id:
+            if feat_id_is_ref(feat_id):
                 atts['in_ref'] = 'true'
                 if impact_levels[impact] > atts['ref_max_impact']:
                     if '@' in feat_id:
                         ref_trxpt_acc, ref_prot_acc = feat_id.split('@')
                         ref_prot_acc = ref_prot_acc.split('.')[0]
-                        gene = prot_gene_dict[ref_prot_acc]
                     else:
                         ref_trxpt_acc = feat_id.split('.')[0]
                         ref_prot_acc = ''
@@ -568,6 +589,7 @@ class OPVReport:
                     alt_feat_dict = parse_feat_id(feat_id)
                     atts.update(alt_feat_dict)
                     atts.update({
+                        'gene': gene,
                         'alt_hgvs_p': hgvs_p,
                         'alt_hgvs_c': hgvs_c,
                         'alt_errs': errs,
@@ -587,12 +609,18 @@ def is_synonymous(hgvs_p):
         return False
 
 
-def parse_feat_id(feat_id, gene_dict=None):
+def parse_feat_id(feat_id):
     if '^' in feat_id:
         trxpt, acc = feat_id.split('^')
     if acc.count('_')>1:
         acc = '_'.join(acc.split('_')[:2])
-    return {'alt_trxpt_acc': trxpt, 'alt_prot_acc': acc, 'gene': prot_gene_dict[acc]}
+    return {'alt_trxpt_acc': trxpt, 'alt_prot_acc': acc}
+
+
+def feat_id_is_ref(feat_id):
+    if 'IP_' not in feat_id and '^' not in feat_id:
+        return True
+    return False
 
 
 def mkdir(path):
