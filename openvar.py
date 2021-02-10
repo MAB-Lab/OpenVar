@@ -39,7 +39,7 @@ chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
-genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
+genome_old_versions = {'hg19': 'hg38', }
 annotation_build = {
     ('human', 'OP_Ens'): 'GRCh38.95_refAlt_chr{chrom_name}',
     ('human', 'OP_Ref'): 'GRCh38.p12_chr{chrom_name}',
