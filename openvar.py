@@ -110,8 +110,8 @@ class SeqStudy:
                 if snp['ALT'] != ref:
                     self.warnings['invalid alleles'].append(snp_line)
                     continue
-                snp['REF'] = snp['ALT']
-                snp['ALT'] = ref
+                snp['ALT'] = snp['REF']
+                snp['REF'] = ref
 
             vcf_ls.append([snp[field] for field in vcf_fields])
         self.vcf_ls = vcf_ls
