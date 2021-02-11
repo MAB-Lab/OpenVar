@@ -403,7 +403,7 @@ class OPVReport:
             gene_snps = {gene: len(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key = lambda x: x['gene'])}
             for snp in alt_grp_snp:
                 snp.update( {'total_gene_snp': gene_snps[snp['gene']]} )
-            alt_snps_stats = {gene_alt: count_altsnp_stats(list(grp)) for gene_alt, grp in itt.groupby(alt_grp_snp, key = lambda x: x['gene'] + ' | ' + x['alt_prot_acc']) if (gene_alt.split(' | ')[1] in highest_impact_ann['alt_highest']) and (gene_alt.split(' | ')[1] != 'null')}
+            alt_snps_stats = {gene_alt: self.count_altsnp_stats(list(grp)) for gene_alt, grp in itt.groupby(alt_grp_snp, key = lambda x: x['gene'] + ' | ' + x['alt_prot_acc']) if (gene_alt.split(' | ')[1] in highest_impact_ann['alt_highest']) and (gene_alt.split(' | ')[1] != 'null')}
 
 
         self.summary = {
