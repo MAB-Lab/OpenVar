@@ -348,12 +348,11 @@ class OPVReport:
             gene_snp_rate = []
         else:
             gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
-            #self.dump_to_file(gene_snps_grp, 'var_error.json')
             gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
             gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
 
             fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
-            genes, rates = zip(*gene_snp_rate[:10])  # top ten
+            genes, rates = zip(*gene_snp_rate[:100])  # top 100
             self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
         # protein level
@@ -397,15 +396,20 @@ class OPVReport:
 
         # hotspots on alts
         if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
-            gene_altsnp_rate = {'All nulls': 'No gene consequences for the submitted variants.'}
+            alt_snps_stats = {'All nulls': 'No gene consequences for the submitted variants.'}
         else:
-            gene_altsnp_rate = {gene: self.count_altsnp_ratio(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+            alt_grp_snp = sorted(self.analyzed_variants, key = lambda x: x['alt_prot_acc'])
+            gene_snps = {gene: len(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key = lambda x: x['gene'])}
+            for snp in alt_grp_snp:
+                snp.update( {'total_gene_snp': gene_snps[snp['gene']]} )
+            alt_snps_stats = {gene_alt: count_altsnp_stats(list(grp)) for gene_alt, grp in itt.groupby(alt_grp_snp, key = lambda x: x['gene'] + ' | ' + x['alt_prot_acc']) if (gene_alt.split(' | ')[1] in highest_impact_ann['alt_highest']) and (gene_alt.split(' | ')[1] != 'null')}
+
 
         self.summary = {
 	        'study_name': self.study_name,
             'Counts summary': {
                 'Total number of variants': len(snp_set),
-                'Total number of affected genes': len(gene_snp_rate),
+                'Total number of affected genes': len(gene_snps),
                 'Total number of affected proteins': sum(prot_counts.values()),
                 'Total number of affected reference proteins': prot_counts['ref'],
                 'Total number of affected alternative proteins': prot_counts['alt'],
@@ -420,7 +424,7 @@ class OPVReport:
                 'Impact Annotation':impact_ann,
                 'Fold Change': fc,
             },
-            'Mutational hotspots on altORFs': gene_altsnp_rate,
+            'Mutational hotspots on altORFs': alt_snps_stats,
         }
 
         if len(self.analyzed_variants) != len([x for x in self.analyzed_variants if x['gene'] == 'null']):
@@ -434,8 +438,9 @@ class OPVReport:
     def generate_bar_chart(self, data, chart_type, fname):
         if chart_type == 'gene_var_rate':
             genes, rates = data
-            plt.bar(range(1, len(genes) + 1), rates)
+            plt.bar(range(1, len(genes) + 1), rates, color='#bde2f8')
             plt.xticks(range(1, len(genes) + 1), genes, rotation='vertical')
+            plt.title('Mutations per Kb per gene')
             plt.xlabel('Genes')
             plt.ylabel('SNPs per Kb')
             plt.savefig(fname)
@@ -443,54 +448,66 @@ class OPVReport:
 
         if chart_type == 'fold_change':
             data = [data[i] for i in range(1, 4)]
-            plt.bar(range(1, 4), data)
+            plt.bar(range(1, 4), data, color=['#e6f2ff', '#66b3ff', '#004d99'])
             plt.xticks(range(1, 4), ['Low', 'Medium', 'High'])
             plt.xlabel('Impact Levels')
-            plt.ylabel('Fold Change')
+            plt.ylabel('Fold-change gained from deeper genome annotation')
+            plt.gca().set_facecolor('dimgrey')
             plt.savefig(fname)
             plt.show()
 
         if chart_type == 'stacked_impact':
             ref_impacts, alt_impacts = data
-            plt.bar(range(1, 4), ref_impacts, label='ref')
-            plt.bar(range(1, 4), alt_impacts, bottom=ref_impacts, label='alt')
+            plt.bar(range(1, 4), ref_impacts, label='Canonical ORFs', color='#39ac73')
+            plt.bar(range(1, 4), alt_impacts, bottom=ref_impacts, label='Alternative ORFs', color='#9fdfbf')
             plt.xticks(range(1, 4), ['Low', 'Medium', 'High'])
-            plt.yscale('log')
             plt.xlabel('Impact Levels')
-            plt.ylabel('count SNPs')
+            plt.ylabel('Count of SNPs')
+            plt.gca().set_facecolor('dimgrey')
             plt.legend()
             plt.savefig(fname)
             plt.show()
 
         if chart_type == 'hotspots_bar':
-            nbin, min_x, max_x = 30, 0., 1.
-            genes, freqs, cnt_alts = data
-            bins = list(range(1, (nbin + 1)))
-            bins = [(min_x + (n - 1) * (max_x / nbin), min_x + n * (max_x / nbin)) for n in bins]
-            bin_labels = ['-'.join(['{:.2f}'.format(round(x, 2)) for x in left_right]) for left_right in bins]
-            genes_per_bin = {n: [] for n in bins}
-            altorf_counts = {n: 0 for n in bins}
-            for gene, freq, cnt_alt in zip(genes, freqs, cnt_alts):
-                for left, right in bins:
+            bins = [(0. + (n - 1) * (1. / 30), 0. + n * (1. / 30)) for n in list(range(1, 31))]
+            bin_labels = [' - '.join(['{:.2f}'.format(round(x, 2)) for x in left_right]) for left_right in bins]
+            altorfs_per_bin = {cat: {n: [] for n in bin_labels} for cat in ['one_snp', 'one_ten', 'over_ten']}
+            for gene_alt in data:
+                for left, right, label in zip([x[0] for x in bins], [x[1] for x in bins], bin_labels):
+                    freq = data[gene_alt]['total_portion_gene']
+                    snps = data[gene_alt]['cnt_snps']
+                    mean_impact = data[gene_alt]['mean_impacts']
                     if (freq > left) and (freq <= right):
-                        genes_per_bin[(left, right)].append(gene)
-                        altorf_counts[(left, right)] += cnt_alt
-
-            gene_counts = {n: len(genes_per_bin[n]) for n in bins}
-            altorf_per_gene = {n: altorf_counts[n] / gene_counts[n] if gene_counts[n] > 0 else 0. for n in bins}
-
-            Norm = plt.Normalize(min(altorf_per_gene.values()), max(altorf_per_gene.values()))
-            val = list(altorf_per_gene.values())
-            colors = plt.cm.plasma(Norm(val))
-
+                        if snps == 1:
+                            altorfs_per_bin['one_snp'][label].append(mean_impact)
+                        elif snps < 10:
+                            altorfs_per_bin['one_ten'][label].append(mean_impact)
+                        else:
+                            altorfs_per_bin['over_ten'][label].append(mean_impact)
+            altorf_counts = {cat: {n: len(altorfs_per_bin[cat][n]) for n in bin_labels} for cat in ['one_snp', 'one_ten', 'over_ten']}
+            colors = ['#f3a6fc', '#cf5fe3', '#7b198c']
             fig, ax = plt.subplots()
-            ax.bar(list(range(1, (nbin + 1), 1)), list(gene_counts.values()), color=colors)
-            fig.colorbar(plt.cm.ScalarMappable(norm=Norm, cmap=plt.cm.plasma_r), ax=ax)
-            plt.xticks(list(range(1, (nbin + 1))), bin_labels, rotation=90)
-            plt.xlabel('binned ratio of SNPs with higher impact in alt')
-            plt.ylabel('count genes')
+            ax.bar(list(range(1, 31, 1)), list(altorf_counts['one_snp'].values()), color = colors[0], label = 'One SNP')
+            ax.bar(list(range(1, 31, 1)), list(altorf_counts['one_ten'].values()), bottom = list(altorf_counts['one_snp'].values()), color = colors[1], label = 'Less than 10 SNPs')
+            ax.bar(list(range(1, 31, 1)), list(altorf_counts['over_ten'].values()), bottom = [altorf_counts['one_snp'][n] + altorf_counts['one_ten'][n] for n in bin_labels], color = colors[2], label = '10 or more SNPs')
+            ax.set_facecolor('dimgrey')
+            plt.xticks(list(range(1, 31)), bin_labels, rotation = 90)
+            plt.title('Mutational hotspots on altORFs')
+            plt.xlabel("Portion of a gene's SNPs within altORF")
+            plt.ylabel('Count of altORFs')
+            plt.legend()
             plt.savefig(fname)
             plt.show()
+
+    def count_altsnp_stats(self, snps_dict):
+        cnt_snps = len(set(snp['hg38_name'] for snp in snps_dict))
+        impacts = list(snp['alt_max_impact'] for snp in snps_dict)
+        hi_impacts = list(snp['alt_max_impact'] for snp in snps_dict if snp['alt_max_impact'] >= snp['ref_max_impact'])
+        tot_gene_snps = list(snp['total_gene_snp'] for snp in snps_dict)[0]
+        return {'cnt_snps': cnt_snps, 'impacts': impacts, 'mean_impacts': np.mean([snp['alt_max_impact'] for snp in snps_dict]), 'highest_impacts': hi_impacts,
+                'total_portion_gene': cnt_snps / tot_gene_snps, 'hi_portion_gene': len(hi_impacts) / tot_gene_snps,
+                'hi_portion_alt': len(hi_impacts) / len(impacts), 'score': (cnt_snps ** np.mean([snp['alt_max_impact'] for snp in snps_dict]))}
+
 
     def count_altsnp_ratio(self, snp_set):
         cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
