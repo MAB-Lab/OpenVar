@@ -399,6 +399,7 @@ class OPVReport:
             alt_snps_stats = {'All nulls': 'No gene consequences for the submitted variants.'}
         else:
             alt_grp_snp = sorted(self.analyzed_variants, key = lambda x: x['alt_prot_acc'])
+            highest_impact_ann = {'alt_highest': [snp['alt_prot_acc'] for snp in self.analyzed_variants if snp['alt_max_impact'] > snp['ref_max_impact']], 'ref_highest': [snp['ref_prot_acc'] for snp in self.analyzed_variants if snp['ref_max_impact'] > snp['alt_max_impact']]}
             gene_snps = {gene: len(list(grp)) for gene, grp in itt.groupby(gene_snps_grp, key = lambda x: x['gene'])}
             for snp in alt_grp_snp:
                 snp.update( {'total_gene_snp': gene_snps[snp['gene']]} )
