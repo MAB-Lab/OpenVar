@@ -23,14 +23,14 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 gene_len_files = {
-    'human': '/open-var-deposit/data/human/gene_lenghts.pkl',
-    'mouse': '/open-var-deposit/data/mouse/gene_lenghts.pkl',
-    'rat': '/open-var-deposit/data/rat/gene_lenghts.pkl',
-    'fruit fly': '/open-var-deposit/data/droso/gene_lenghts.pkl',
+    ('human',  'OP_Ens'): '/open-var-deposit/data/human/gene_lenghts_ensembl.pkl',
+    ('mouse', 'OP_Ens'): '/open-var-deposit/data/mouse/gene_lenghts_ensembl.pkl',
+    ('human', 'OP_Ref'): '/open-var-deposit/data/human/gene_lenghts_refseq.pkl',
+    ('mouse', 'OP_Ref'): '/open-var-deposit/data/mouse/gene_lenghts_refseq.pkl',
 }
 genome_fastas = {
     'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
-    'mouse': '/shared-genomes-folder/human/GRCm38/complete-genome.fa',
+    'mouse': '/shared-genomes-folder/mouse/GRCm38/complete-genome.fa',
     'rat': '',
     'fruit fly': '',
 }
@@ -39,11 +39,12 @@ chrom_set = set(chrom_names)
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
-genome_old_versions = {'hg19': 'hg38', 'mm39': 'mm10', 'rn6': 'rn5', 'dm6': 'dm5'}
+genome_old_versions = {'hg19': 'hg38', }
 annotation_build = {
     ('human', 'OP_Ens'): 'GRCh38.95_refAlt_chr{chrom_name}',
     ('human', 'OP_Ref'): 'GRCh38.p12_chr{chrom_name}',
     ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
+    ('mouse', 'OP_Ref'): 'GRCm38.p6_chr{chrom_name}',
 }
 
 class SeqStudy:
@@ -180,6 +181,7 @@ class SeqStudy:
 class OpenVar:
     def __init__(self, snpeff_path, vcf, annotation='OP_Ens'):
         print('creating OPV object...')
+        self.annotation = annotation
         self.snpeff_path = snpeff_path
         self.snpeff_jar = os.path.join(snpeff_path, 'snpEff.jar')
         self.snpsift_jar = os.path.join(snpeff_path, 'SnpSift.jar')
@@ -330,7 +332,7 @@ class OPVReport:
             f.write(json.dumps(var, indent=2))
 
     def compute_summary_stats(self):
-        gene_lenghts = pickle.load(open(gene_len_files[self.specie], 'rb'))
+        gene_lenghts = pickle.load(open(gene_len_files[(self.specie, self.opv.annotation)], 'rb'))
         # overall summary
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
