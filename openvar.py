@@ -1,18 +1,17 @@
 import os
 import sys
 import csv
+import json
 import pathlib
 import pickle
 import pyfaidx
 import subprocess
 import multiprocessing
-import itertools as itt
 import numpy as np
+import itertools as itt
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
-import json
-
 
 maxInt = sys.maxsize
 while True:
@@ -43,22 +42,24 @@ genome_old_versions = {'hg19': 'hg38', }
 annotation_build = {
     ('human', 'OP_Ens'): 'GRCh38.95_refAlt_chr{chrom_name}',
     ('human', 'OP_Ref'): 'GRCh38.p12_chr{chrom_name}',
+    ('human', 'Ens'): 'GRCh38.95',
+    ('human', 'Ref'): 'GRCh38.p12',
     ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
     ('mouse', 'OP_Ref'): 'GRCm38.p6_chr{chrom_name}',
 }
 
 class SeqStudy:
-    def __init__(self, data_dir, file_name, study_name, results_dir, specie, genome_version, verbose=False):
+    def __init__(self, data_dir, file_name, study_name, results_dir, specie, genome_version, annotation, verbose=False):
         self.verbose = verbose
-        self.data_dir = mkdir(data_dir)
-        self.genome_version = genome_version
         self.specie = specie
-        self.results_dir = mkdir(results_dir)
-        self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
-        self.output_dir = mkdir(os.path.join(self.results_dir, 'output'))
-        self.file_name = file_name
-        self.file_path = os.path.join(data_dir, file_name)
+        self.genome_version = genome_version
+        self.annotation = annotation
         self.study_name = study_name
+        self.file_name = file_name
+        self.data_dir = mkdir(data_dir)
+        self.results_dir = mkdir(results_dir)
+        self.output_dir = mkdir(os.path.join(self.results_dir, 'output'))
+        self.file_path = os.path.join(data_dir, file_name)
         self.warnings = {'unknown chromosomes': [], 'invalid positions': [], 'invalid alleles': []}
         self.file_check = True
         self.parse_vcf()
@@ -72,8 +73,13 @@ class SeqStudy:
             print('vcf altref allele check')
             self.write_warnings()
             print('vcf warnings written')
-            self.split_by_chrom()
-            print('vcf chroms splited')
+            if 'OP' in self.annotation: # split vcf by chrom if using OP annoations
+                self.vcf_splits_dir = mkdir(os.path.join(self.results_dir, 'vcf_splits'))
+                self.split_by_chrom()
+                print('vcf chroms splited')
+            else:
+                self.single_vcf_path = os.path.join(self.data_dir, self.study_name + '.vcf')
+                self.write_vcf(self.single_vcf_path, self.vcf_ls)
 
     def parse_vcf(self):
         vcf_ls = []
@@ -161,10 +167,13 @@ class SeqStudy:
                 self.vcf_splits_dir,
                 '{study_name}_{chrom_name}.vcf'.format(study_name=self.study_name, chrom_name=chrom_name)
             )
-            with open(self.vcf_split_paths[chrom_name], 'w') as vcf_file:
-                writer = csv.writer(vcf_file, delimiter='\t')
-                for row in rows:
-                    writer.writerow(row)
+            write_vcf(self, self.vcf_split_paths[chrom_name], rows)
+
+    def write_vcf(self, fpath, vcf_rows):
+        with open(fpath, 'w') as vcf_file:
+            writer = csv.writer(vcf_file, delimiter='\t')
+            for row in vcf_rows:
+                writer.writerow(row)
 
     def write_warnings(self):
         if not any(self.warnings.values()):
@@ -179,22 +188,21 @@ class SeqStudy:
 
 
 class OpenVar:
-    def __init__(self, snpeff_path, vcf, annotation='OP_Ens'):
-        print('creating OPV object...')
-        self.annotation = annotation
+    def __init__(self, snpeff_path, vcf):
+        self.vcf = vcf
+        self.specie = vcf.specie
+        self.annotation = vcf.annotation
+        self.snpeff_build = annotation_build[(self.specie, annotation)]
         self.snpeff_path = snpeff_path
         self.snpeff_jar = os.path.join(snpeff_path, 'snpEff.jar')
         self.snpsift_jar = os.path.join(snpeff_path, 'SnpSift.jar')
         self.verbose = False
-        self.vcf = vcf
-        self.specie = vcf.specie
-        self.snpeff_build = annotation_build[(self.specie, annotation)]
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
 
     def run_snpeff_parallel_pipe(self, nprocs=12):
         pool = multiprocessing.Pool(processes=nprocs)
-        r = pool.map(self.run_snpeff, chrom_names)
+        r = pool.map(self.run_snpeff_chromosome, chrom_names)
         pool.close()
         pool.join()
 
@@ -202,17 +210,20 @@ class OpenVar:
             return True
         return False
 
-    def run_snpeff(self, chrom_name):
+    def run_snpeff_chromosome(self, chrom_name):
         snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
         if chrom_name not in self.vcf.vcf_split_paths:
             if self.verbose:
                 print('no variant in chromosome {}'.format(chrom_name))
             return True
         vcf_path = os.path.join(self.vcf.vcf_split_paths[chrom_name])
+        run_snpeff(vcf_path, snpEff_chrom_build)
+
+    def run_snpeff(self, vcf_path, build):
         vcf_ann_path = vcf_path.replace('.vcf', '.ann.vcf')
         snpEff_logfile = os.path.join(self.logs_dir, '{}_chr{}_snpEff.log'.format(self.vcf.study_name, chrom_name))
 
-        snpeff_cmd = self.get_snpeff_cmd(snpEff_chrom_build, vcf_path)
+        snpeff_cmd = self.get_snpeff_cmd(build, vcf_path)
 
         if self.verbose:
             print('Running SnpEff...')
@@ -256,10 +267,10 @@ class OpenVar:
 
         return True
 
-    def get_snpeff_cmd(self, snpEff_chrom_build, vcf_path):
+    def get_snpeff_cmd(self, build, vcf_path):
         cmd = 'java -Xmx12g -jar {snpeff_jar} -v {build} {vcf_path}'.format(
             snpeff_jar=self.snpeff_jar,
-            build=snpEff_chrom_build,
+            build=build,
             vcf_path=vcf_path
         )
         return cmd
@@ -424,7 +435,7 @@ class OPVReport:
                 'Number of variants with highest impact on reference proteins': count_highest['ref'],
                 'Number of variants with highest impact on alternative proteins': count_highest['alt'],
                 'Impact Counts': impact_counts,
-                'Impact Annotation':impact_ann,
+                'Impact Annotation': impact_ann,
                 'Fold Change': fc,
             },
             'Mutational hotspots on altORFs': alt_snps_stats,
@@ -432,7 +443,6 @@ class OPVReport:
 
         if len(self.analyzed_variants) != len([x for x in self.analyzed_variants if x['gene'] == 'null']):
             fname = os.path.join(self.output_dir, '{}_hotspots_barchart.svg'.format(self.study_name))
-            #data = zip(*[(gene, counts['ratio_higher_alt'], len(counts['alts'])) for gene, counts in self.summary['Mutational hotspots on altORFs'].items()])
             self.generate_bar_chart(alt_snps_stats, 'hotspots_bar', fname)
 
         fname = os.path.join(self.output_dir, 'summary.pkl')
@@ -510,7 +520,6 @@ class OPVReport:
         return {'cnt_snps': cnt_snps, 'impacts': impacts, 'mean_impacts': np.mean([snp['alt_max_impact'] for snp in snps_dict]), 'highest_impacts': hi_impacts,
                 'total_portion_gene': cnt_snps / tot_gene_snps, 'hi_portion_gene': len(hi_impacts) / tot_gene_snps,
                 'hi_portion_alt': len(hi_impacts) / len(impacts), 'score': (cnt_snps ** np.mean([snp['alt_max_impact'] for snp in snps_dict]))}
-
 
     def count_altsnp_ratio(self, snp_set):
         cnt_snps = len(set(snp['hg38_name'] for snp in snp_set))
