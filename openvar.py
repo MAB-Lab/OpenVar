@@ -46,6 +46,7 @@ annotation_build = {
     ('human', 'Ref'): 'GRCh38.p12',
     ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
     ('mouse', 'OP_Ref'): 'GRCm38.p6_chr{chrom_name}',
+
 }
 
 class SeqStudy:
@@ -167,7 +168,7 @@ class SeqStudy:
                 self.vcf_splits_dir,
                 '{study_name}_{chrom_name}.vcf'.format(study_name=self.study_name, chrom_name=chrom_name)
             )
-            write_vcf(self, self.vcf_split_paths[chrom_name], rows)
+            self.write_vcf(self, self.vcf_split_paths[chrom_name], rows)
 
     def write_vcf(self, fpath, vcf_rows):
         with open(fpath, 'w') as vcf_file:
