@@ -193,7 +193,7 @@ class OpenVar:
         self.vcf = vcf
         self.specie = vcf.specie
         self.annotation = vcf.annotation
-        self.snpeff_build = annotation_build[(self.specie, annotation)]
+        self.snpeff_build = annotation_build[(self.specie, self.annotation)]
         self.snpeff_path = snpeff_path
         self.snpeff_jar = os.path.join(snpeff_path, 'snpEff.jar')
         self.snpsift_jar = os.path.join(snpeff_path, 'SnpSift.jar')
