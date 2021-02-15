@@ -255,9 +255,9 @@ class OpenVar:
         if self.verbose:
             print(snpsift_cmd)
         annOnePerLine_file = os.path.join(
-            self.vcf.vcf_splits_dir, '{study_name}_{chrom_name}_annOnePerLine.tsv'.format(
+            self.vcf.vcf_splits_dir, '{study_name}_{build}_annOnePerLine.tsv'.format(
                 study_name=self.vcf.study_name,
-                chrom_name=chrom_name
+                build=build
             )
         )
         snpsift_subproc = subprocess.Popen(snpsift_cmd, shell=True, stdin=perl_subproc.stdout,
