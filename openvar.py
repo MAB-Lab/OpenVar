@@ -222,7 +222,7 @@ class OpenVar:
 
     def run_snpeff(self, vcf_path, build):
         vcf_ann_path = vcf_path.replace('.vcf', '.ann.vcf')
-        snpEff_logfile = os.path.join(self.logs_dir, '{}_chr{}_snpEff.log'.format(self.vcf.study_name, chrom_name))
+        snpEff_logfile = os.path.join(self.logs_dir, '{}_{}_snpEff.log'.format(self.vcf.study_name, build))
 
         snpeff_cmd = self.get_snpeff_cmd(build, vcf_path)
 
