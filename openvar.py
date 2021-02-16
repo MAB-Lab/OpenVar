@@ -255,7 +255,7 @@ class OpenVar:
         snpsift_cmd = self.get_snpsift_cmd()
         if self.verbose:
             print(snpsift_cmd)
-        if self.vcf.hasattr('vcf_splits_dir'):
+        if hasattr(self.vcf, 'vcf_splits_dir'):
             vcf_dir = self.vcf.vcf_splits_dir
         else:
             vcf_dir = self.vcf.results_dir
