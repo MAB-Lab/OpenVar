@@ -22,10 +22,10 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 gene_len_files = {
-    ('human',  'OP_Ens'): '/open-var-deposit/data/human/gene_lenghts_ensembl.pkl',
-    ('mouse', 'OP_Ens'): '/open-var-deposit/data/mouse/gene_lenghts_ensembl.pkl',
-    ('human', 'OP_Ref'): '/open-var-deposit/data/human/gene_lenghts_refseq.pkl',
-    ('mouse', 'OP_Ref'): '/open-var-deposit/data/mouse/gene_lenghts_refseq.pkl',
+    ('human', 'Ens'): '/open-var-deposit/data/human/gene_lenghts_ensembl.pkl',
+    ('mouse', 'Ens'): '/open-var-deposit/data/mouse/gene_lenghts_ensembl.pkl',
+    ('human', 'Ref'): '/open-var-deposit/data/human/gene_lenghts_refseq.pkl',
+    ('mouse', 'Ref'): '/open-var-deposit/data/mouse/gene_lenghts_refseq.pkl',
 }
 genome_fastas = {
     'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
@@ -46,7 +46,8 @@ annotation_build = {
     ('human', 'Ref'): 'GRCh38.p12',
     ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
     ('mouse', 'OP_Ref'): 'GRCm38.p6_chr{chrom_name}',
-
+    ('mouse', 'Ens'): 'GRCm38.95',
+    ('mouse', 'Ref'): 'GRCm38.p6',
 }
 
 class SeqStudy:
@@ -344,7 +345,7 @@ class OPVReport:
             f.write(json.dumps(var, indent=2))
 
     def compute_summary_stats(self):
-        gene_lenghts = pickle.load(open(gene_len_files[(self.specie, self.opv.annotation)], 'rb'))
+        gene_lenghts = pickle.load(open(gene_len_files[(self.specie, self.opv.annotation.remove('OP_'))], 'rb'))
         # overall summary
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
