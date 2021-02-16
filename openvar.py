@@ -80,7 +80,7 @@ class SeqStudy:
                 self.split_by_chrom()
                 print('vcf chroms splited')
             else:
-                self.single_vcf_path = os.path.join(self.data_dir, self.study_name + '.vcf')
+                self.single_vcf_path = os.path.join(self.results_dir, self.study_name + '.vcf')
                 self.write_vcf(self.single_vcf_path, self.vcf_ls)
 
     def parse_vcf(self):
@@ -255,8 +255,9 @@ class OpenVar:
         snpsift_cmd = self.get_snpsift_cmd()
         if self.verbose:
             print(snpsift_cmd)
+        vcf_dir = self.vcf.results if 'chr' in build else self.vcf.vcf_splits_dir
         annOnePerLine_file = os.path.join(
-            self.vcf.vcf_splits_dir, '{study_name}_{build}_annOnePerLine.tsv'.format(
+            vcf_dir, '{study_name}_{build}_annOnePerLine.tsv'.format(
                 study_name=self.vcf.study_name,
                 build=build
             )
