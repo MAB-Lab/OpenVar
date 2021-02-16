@@ -255,7 +255,7 @@ class OpenVar:
         snpsift_cmd = self.get_snpsift_cmd()
         if self.verbose:
             print(snpsift_cmd)
-        vcf_dir = self.vcf.results if 'chr' in build else self.vcf.vcf_splits_dir
+        vcf_dir = self.vcf.results if 'chr' not in build else self.vcf.vcf_splits_dir
         annOnePerLine_file = os.path.join(
             vcf_dir, '{study_name}_{build}_annOnePerLine.tsv'.format(
                 study_name=self.vcf.study_name,
