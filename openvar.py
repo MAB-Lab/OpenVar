@@ -577,7 +577,7 @@ class OPVReport:
         if 'OP_' in self.opv.annotation:
             _dir = self.opv.vcf.vcf_splits_dir
 
-        for f in os.listdir():
+        for f in os.listdir(_dir):
             fpath = os.path.join(_dir, f)
             if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
                 annOnePerLine_files.append(fpath)
