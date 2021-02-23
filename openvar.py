@@ -306,9 +306,8 @@ class OPVReport:
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
         self.specie = opv.specie
-        if 'OP_' in opv.annotation:
-            self.annOnePerLine_files = self.list_annOnePerLine_files()
-            self.analyzed_variants = self.analyze_all_variants()
+        self.annOnePerLine_files = self.list_annOnePerLine_files()
+        self.analyzed_variants = self.analyze_all_variants()
 
 
     def aggregate_annotated_vcf(self):
@@ -572,7 +571,7 @@ class OPVReport:
 
     def list_annOnePerLine_files(self):
         annOnePerLine_files = []
-        _dir = self.opv.output_dir
+        _dir = self.opv.vcf.results_dir
         if 'OP_' in self.opv.annotation:
             _dir = self.opv.vcf.vcf_splits_dir
 
