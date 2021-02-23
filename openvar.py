@@ -33,8 +33,12 @@ genome_fastas = {
     'rat': '',
     'fruit fly': '',
 }
-chrom_names = [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT']
-chrom_set = set(chrom_names)
+chrom_names = {
+    'human': [str(x) for x in range(1, 23)] + ['X', 'Y', 'MT'],
+    'mouse': [str(x) for x in range(1, 20)] + ['X', 'Y', 'MT']
+}
+chrom_set = {sp:set(chrom_names[sp]) for sp in chrom_names}
+
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
@@ -99,7 +103,7 @@ class SeqStudy:
             snp = dict(zip(vcf_fields, snp))
 
             # check chromosome names
-            if snp['CHROM'].replace('chr', '') not in chrom_set:
+            if snp['CHROM'].replace('chr', '') not in chrom_set[self.specie]:
                 self.warnings['unknown chromosomes'].append(snp['CHROM'])
                 continue
             snp['CHROM'] = snp['CHROM'].replace('chr', '')
@@ -152,7 +156,7 @@ class SeqStudy:
             if lift_hg38 is not None and lift_hg38:
                 hg38_chrom, hg38_pos, strand = lift_hg38[0][0:3]
                 snp['CHROM'] = hg38_chrom.replace('chr', '')
-                if snp['CHROM'] not in chrom_set:
+                if snp['CHROM'] not in chrom_set[self.specie]:
                     self.warnings['lost at liftOver'].append(snp_line)
                     continue
                 snp['POS'] = hg38_pos
@@ -204,7 +208,7 @@ class OpenVar:
 
     def run_snpeff_parallel_pipe(self, nprocs=12):
         pool = multiprocessing.Pool(processes=nprocs)
-        r = pool.map(self.run_snpeff_chromosome, chrom_names)
+        r = pool.map(self.run_snpeff_chromosome, chrom_names[self.specie])
         pool.close()
         pool.join()
 
@@ -353,7 +357,7 @@ class OPVReport:
 
         snp_set = set([snp['hg38_name'] for snp in self.analyzed_variants])
         snps_per_chroms = Counter([snp.split('_')[0] for snp in snp_set])
-        snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names]
+        snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names[self.specie]]
 
         gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
         gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
@@ -376,6 +380,8 @@ class OPVReport:
                 'Chromosome Level': snps_per_chroms,
                 'Gene Level': gene_snp_rate,
             }
+            fname = os.path.join(self.output_dir, 'summary.pkl')
+            pickle.dump(self.summary, open(fname, 'wb'))
         return snps_per_chroms, gene_snp_rate
 
     def compute_summary_stats(self):
