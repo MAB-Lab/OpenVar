@@ -306,8 +306,9 @@ class OPVReport:
         self.output_dir = self.opv.output_dir
         self.study_name = self.opv.vcf.study_name
         self.specie = opv.specie
-        self.annOnePerLine_files = self.list_annOnePerLine_files()
-        self.analyzed_variants = self.analyze_all_variants()
+        if 'OP_' in opv.annotation:
+            self.annOnePerLine_files = self.list_annOnePerLine_files()
+            self.analyzed_variants = self.analyze_all_variants()
 
 
     def aggregate_annotated_vcf(self):
@@ -348,8 +349,37 @@ class OPVReport:
         with open(filename, 'w') as f:
             f.write(json.dumps(var, indent=2))
 
-    def compute_summary_stats(self):
+    def compute_chrom_gene_level_stats(self, write_summary_pkl=False):
         gene_lenghts = pickle.load(open(gene_len_files[(self.specie, self.opv.annotation.remove('OP_'))], 'rb'))
+
+        snp_set = set([snp['hg38_name'] for snp in self.analyzed_variants])
+        snps_per_chroms = Counter([snp.split('_')[0] for snp in snp_set])
+        snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names]
+
+        gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
+        gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+        gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
+
+        if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
+            gene_snp_rate = []
+
+        fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
+        genes, rates = zip(*gene_snp_rate[:100])  # top 100
+        self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
+        if write_summary_pkl:
+            self.summary = {
+                'study_name': self.study_name,
+                'Counts summary': {
+                    'Total number of variants': len(snp_set),
+                    'Total number of affected genes': len(gene_snp_rate),
+                    'Total number of affected proteins': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants if snp['ref_prot_acc'] != 'null')),
+                },
+                'Chromosome Level': snps_per_chroms,
+                'Gene Level': gene_snp_rate,
+            }
+        return snps_per_chroms, gene_snp_rate
+
+    def compute_summary_stats(self):
         # overall summary
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
@@ -357,22 +387,8 @@ class OPVReport:
             'ref': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants if snp['ref_prot_acc'] != 'null'))
         }
 
-        # chrom level
-        snp_set = set([snp['hg38_name'] for snp in self.analyzed_variants])
-        snps_per_chroms = Counter([snp.split('_')[0] for snp in snp_set])
-        snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names]
-
-        # gene level
-        if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
-            gene_snp_rate = []
-        else:
-            gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
-            gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
-            gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
-
-            fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
-            genes, rates = zip(*gene_snp_rate[:100])  # top 100
-            self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
+        # chrom level & gene level
+        snps_per_chroms, gene_snp_rate = self.compute_chrom_gene_level_stats()
 
         # protein level
         if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
@@ -556,8 +572,12 @@ class OPVReport:
 
     def list_annOnePerLine_files(self):
         annOnePerLine_files = []
-        for f in os.listdir(self.opv.vcf.vcf_splits_dir):
-            fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
+        _dir = self.opv.output_dir
+        if 'OP_' in self.opv.annotation:
+            _dir = self.opv.vcf.vcf_splits_dir
+
+        for f in os.listdir():
+            fpath = os.path.join(_dir, f)
             if os.path.isfile(fpath) and 'annOnePerLine' in fpath:
                 annOnePerLine_files.append(fpath)
         return annOnePerLine_files
