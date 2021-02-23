@@ -564,7 +564,7 @@ class OPVReport:
             for snp_eff in itt.groupby(sorted(snp_effs, key=lambda x: x[0]), key=lambda x: x[0]):
                 analyzed_variants.append(self.analyze_variant(*snp_eff))
 
-        if all([snp['gene'] == 'null' for snp in analyzed_variants])
+        if all([snp['gene'] == 'null' for snp in analyzed_variants]):
             print('All genes are null!')
             #raise Exception('All genes are null!')
 
