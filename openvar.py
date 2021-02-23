@@ -349,7 +349,7 @@ class OPVReport:
             f.write(json.dumps(var, indent=2))
 
     def compute_chrom_gene_level_stats(self, write_summary_pkl=False):
-        gene_lenghts = pickle.load(open(gene_len_files[(self.specie, self.opv.annotation.remove('OP_'))], 'rb'))
+        gene_lenghts = pickle.load(open(gene_len_files[(self.specie, self.opv.annotation.replace('OP_', ''))], 'rb'))
 
         snp_set = set([snp['hg38_name'] for snp in self.analyzed_variants])
         snps_per_chroms = Counter([snp.split('_')[0] for snp in snp_set])
@@ -565,8 +565,8 @@ class OPVReport:
                 analyzed_variants.append(self.analyze_variant(*snp_eff))
 
         if all([snp['gene'] == 'null' for snp in analyzed_variants]):
-            print('All genes are null!')
-            #raise Exception('All genes are null!')
+            #print('All genes are null!')
+            raise Exception('All genes are null!')
 
         print('All variants analyzed')
         return analyzed_variants
