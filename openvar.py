@@ -453,6 +453,7 @@ class OPVReport:
             data = [data[i] for i in range(1, 4)]
             plt.bar(range(1, 4), data, color=['#e6f2ff', '#66b3ff', '#004d99'])
             plt.xticks(range(1, 4), ['Low', 'Medium', 'High'])
+            plt.title('Fold-change gained from deeper annotation per impact')
             plt.xlabel('Impact Levels')
             plt.ylabel('Fold-change gained from deeper genome annotation')
             plt.gca().set_facecolor('dimgrey')
