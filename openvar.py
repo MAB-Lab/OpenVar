@@ -9,6 +9,7 @@ import subprocess
 import multiprocessing
 import numpy as np
 import itertools as itt
+from shutil import copyfile
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
@@ -315,6 +316,12 @@ class OPVReport:
 
 
     def aggregate_annotated_vcf(self):
+        if 'OP_' not in self.opv.annotation:
+            single_vcf_ann = self.opv.vcf.single_vcf_path.replace('.vcf', '.ann.vcf')
+            dst = os.path.join(self.output_dir, os.path.split(single_vcf_ann)[-1])
+            copyfile(single_vcf_ann, dst)
+            return True
+
         split_ann_vcfs = []
         for f in os.listdir(self.opv.vcf.vcf_splits_dir):
             fpath = os.path.join(self.opv.vcf.vcf_splits_dir, f)
@@ -332,13 +339,16 @@ class OPVReport:
 
     def write_tabular(self):
         annOnePerLine_file_path = os.path.join(self.output_dir, '{}_annOnePerLine.tsv'.format(self.study_name))
-        with open(annOnePerLine_file_path, 'w') as tab_file:
-            writer = csv.writer(tab_file, delimiter='\t')
-            for annOnePerLine_file in self.annOnePerLine_files:
-                for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file, as_dict=True)):
-                    if n == 0:
-                        writer.writerow(row.keys())
-                    writer.writerow(row.values())
+        if 'OP_' in self.opv.annotation:
+            with open(annOnePerLine_file_path, 'w') as tab_file:
+                writer = csv.writer(tab_file, delimiter='\t')
+                for annOnePerLine_file in self.annOnePerLine_files:
+                    for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file, as_dict=True)):
+                        if n == 0:
+                            writer.writerow(row.keys())
+                        writer.writerow(row.values())
+        else:
+            copyfile(self.annOnePerLine_files[0], annOnePerLine_file_path)
 
         max_impact_file_path = os.path.join(self.output_dir, '{}_max_impact.tsv'.format(self.study_name))
         cols = self.analyzed_variants[0].keys()
