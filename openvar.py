@@ -379,6 +379,7 @@ class OPVReport:
         fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
         genes, rates = zip(*gene_snp_rate[:100])  # top 100
         self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
+
         if write_summary_pkl:
             self.summary = {
                 'study_name': self.study_name,
@@ -392,7 +393,9 @@ class OPVReport:
             }
             fname = os.path.join(self.output_dir, 'summary.pkl')
             pickle.dump(self.summary, open(fname, 'wb'))
-        return snps_per_chroms, gene_snp_rate
+
+        else:
+            return snps_per_chroms, gene_snp_rate
 
     def compute_summary_stats(self):
         # overall summary
