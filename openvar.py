@@ -23,10 +23,10 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 gene_len_files = {
-    ('human', 'Ens'): '/open-var-deposit/data/human/gene_lenghts_ensembl.pkl',
-    ('mouse', 'Ens'): '/open-var-deposit/data/mouse/gene_lenghts_ensembl.pkl',
-    ('human', 'Ref'): '/open-var-deposit/data/human/gene_lenghts_refseq.pkl',
-    ('mouse', 'Ref'): '/open-var-deposit/data/mouse/gene_lenghts_refseq.pkl',
+    ('human', 'Ensembl'): '/open-var-deposit/data/human/gene_lenghts_ensembl.pkl',
+    ('mouse', 'Ensembl'): '/open-var-deposit/data/mouse/gene_lenghts_ensembl.pkl',
+    ('human', 'RefSeq'): '/open-var-deposit/data/human/gene_lenghts_refseq.pkl',
+    ('mouse', 'RefSeq'): '/open-var-deposit/data/mouse/gene_lenghts_refseq.pkl',
 }
 genome_fastas = {
     'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
@@ -45,14 +45,14 @@ vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {'hg19': 'hg38', }
 annotation_build = {
-    ('human', 'OP_Ens'): 'GRCh38.95_refAlt_chr{chrom_name}',
-    ('human', 'OP_Ref'): 'GRCh38.p12_chr{chrom_name}',
-    ('human', 'Ens'): 'GRCh38.95',
-    ('human', 'Ref'): 'GRCh38.p12',
-    ('mouse', 'OP_Ens'): 'GRCm38.95_chr{chrom_name}',
-    ('mouse', 'OP_Ref'): 'GRCm38.p6_chr{chrom_name}',
-    ('mouse', 'Ens'): 'GRCm38.95',
-    ('mouse', 'Ref'): 'GRCm38.p6',
+    ('human', 'OP_Ensembl'): 'GRCh38.95_refAlt_chr{chrom_name}',
+    ('human', 'OP_RefSeq'): 'GRCh38.p12_chr{chrom_name}',
+    ('human', 'Ensembl'): 'GRCh38.95',
+    ('human', 'RefSeq'): 'GRCh38.p12',
+    ('mouse', 'OP_Ensembl'): 'GRCm38.95_chr{chrom_name}',
+    ('mouse', 'OP_RefSeq'): 'GRCm38.p6_chr{chrom_name}',
+    ('mouse', 'Ensembl'): 'GRCm38.95',
+    ('mouse', 'RefSeq'): 'GRCm38.p6',
 }
 
 class SeqStudy:
@@ -227,6 +227,8 @@ class OpenVar:
         self.run_snpeff(vcf_path, snpEff_chrom_build)
 
     def run_snpeff(self, vcf_path, build):
+        if build in {'Ensembl', 'RefSeq'}:
+            build = annotation_build[(self.specie, build)]
         vcf_ann_path = vcf_path.replace('.vcf', '.ann.vcf')
         snpEff_logfile = os.path.join(self.logs_dir, '{}_{}_snpEff.log'.format(self.vcf.study_name, build))
 
