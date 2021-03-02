@@ -493,7 +493,8 @@ class OPVReport:
     def generate_bar_chart(self, data, chart_type, fname):
         if chart_type == 'gene_var_rate':
             genes, rates = data
-            plt.bar(range(1, len(genes) + 1), rates, color='#bde2f8')
+            fig, ax = plt.subplots()
+            ax.bar(range(1, len(genes) + 1), rates, color='#bde2f8')
             plt.xticks(range(1, len(genes) + 1), genes, rotation='vertical')
             plt.title('Mutations per Kb per gene')
             plt.xlabel('Genes')
@@ -503,22 +504,25 @@ class OPVReport:
 
         if chart_type == 'fold_change':
             data = [data[i] for i in range(1, 4)]
-            plt.bar(range(1, 4), data, color=['#e6f2ff', '#66b3ff', '#004d99'])
+            fig, ax = plt.subplots()
+            ax.bar(range(1, 4), data, color=['#e6f2ff', '#66b3ff', '#004d99'])
+            ax.set_facecolor('dimgrey')
             plt.xticks(range(1, 4), ['Low', 'Medium', 'High'])
+            plt.title('Fold-change gained from deeper annotation per impact')
             plt.xlabel('Impact Levels')
             plt.ylabel('Fold-change gained from deeper genome annotation')
-            plt.gca().set_facecolor('dimgrey')
             plt.savefig(fname)
             plt.show()
 
         if chart_type == 'stacked_impact':
             ref_impacts, alt_impacts = data
-            plt.bar(range(1, 4), ref_impacts, label='Canonical ORFs', color='#39ac73')
-            plt.bar(range(1, 4), alt_impacts, bottom=ref_impacts, label='Alternative ORFs', color='#9fdfbf')
+            fig, ax = plt.subplots()
+            ax.bar(range(1, 4), ref_impacts, label='Canonical ORFs', color='#39ac73')
+            ax.bar(range(1, 4), alt_impacts, bottom=ref_impacts, label='Alternative ORFs', color='#9fdfbf')
+            ax.set_facecolor('dimgrey')
             plt.xticks(range(1, 4), ['Low', 'Medium', 'High'])
             plt.xlabel('Impact Levels')
             plt.ylabel('Count of SNPs')
-            plt.gca().set_facecolor('dimgrey')
             plt.legend()
             plt.savefig(fname)
             plt.show()
