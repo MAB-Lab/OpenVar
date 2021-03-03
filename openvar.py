@@ -590,8 +590,8 @@ class OPVReport:
                 analyzed_variants.append(self.analyze_variant(*snp_eff))
 
         if all([snp['gene'] == 'null' for snp in analyzed_variants]):
-            #print('All genes are null!')
-            raise Exception('All genes are null!')
+            print('All genes are null!')
+            #raise Exception('All genes are null!')
 
         print('All variants analyzed')
         return analyzed_variants
