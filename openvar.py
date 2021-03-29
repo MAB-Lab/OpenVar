@@ -6,7 +6,7 @@ import pathlib
 import pickle
 import pyfaidx
 import subprocess
-import multiprocessing
+import threading
 import numpy as np
 import itertools as itt
 from shutil import copyfile
@@ -194,6 +194,16 @@ class SeqStudy:
                         f.write('\t' + fault + '\n')
 
 
+class Worker:
+    def __init__(self, function, args):
+        self.result = None
+        self.args = args
+
+        def work():
+            self.result = function(self.args)
+
+        self.thread = threading.Thread(target = work)
+
 class OpenVar:
     def __init__(self, snpeff_path, vcf):
         self.vcf = vcf
@@ -208,14 +218,19 @@ class OpenVar:
         self.output_dir = self.vcf.output_dir
 
     def run_snpeff_parallel_pipe(self, nprocs=12):
-        pool = multiprocessing.Pool(processes=nprocs)
-        r = pool.map(self.run_snpeff_chromosome, chrom_names[self.specie])
-        pool.close()
-        pool.join()
+        workers = [ Worker(self.run_snpeff_chromosome, chrom_name) for chrom_name in chrom_names[self.specie] ]
+        
+        for w in workers:
+            w.thread.start()
 
-        if all(r):
-            return True
-        return False
+        for w in workers:
+            w.thread.join()
+
+        for w in workers:
+            if w.result is None or w.result is False:
+                return False
+
+        return True
 
     def run_snpeff_chromosome(self, chrom_name):
         snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
@@ -224,7 +239,7 @@ class OpenVar:
                 print('no variant in chromosome {}'.format(chrom_name))
             return True
         vcf_path = os.path.join(self.vcf.vcf_split_paths[chrom_name])
-        self.run_snpeff(vcf_path, snpEff_chrom_build)
+        return self.run_snpeff(vcf_path, snpEff_chrom_build)
 
     def run_snpeff(self, vcf_path, build):
         if build in {'Ensembl', 'RefSeq'}:
