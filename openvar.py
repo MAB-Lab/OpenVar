@@ -416,6 +416,7 @@ class OPVReport:
 
     def compute_summary_stats(self):
         # overall summary
+        snp_set = set([snp['hg38_name'] for snp in self.analyzed_variants])
         prot_counts = {
             'alt': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'IP_' in snp['alt_prot_acc'])),
             'iso': len(set(snp['alt_prot_acc'] for snp in self.analyzed_variants if 'II_' in snp['alt_prot_acc'])),
