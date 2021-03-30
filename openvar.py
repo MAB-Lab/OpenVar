@@ -465,6 +465,7 @@ class OPVReport:
             self.generate_bar_chart([ref_impacts, alt_impacts], 'stacked_impact', fname)
 
         # hotspots on alts
+        gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
         if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
             alt_snps_stats = {'All nulls': 'No gene consequences for the submitted variants.'}
         else:
