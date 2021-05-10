@@ -135,12 +135,22 @@ class SeqStudy:
             snp_line = to_tsv_line(snp)
             snp = dict(zip(vcf_fields, snp))
             ref = genome[snp['CHROM']][snp['POS'] - 1]
+            ref_alt = ref
+            if (',' in snp['ALT']) or (',' in snp['REF']):
+                self.warnings['invalid alleles'].append(snp_line)
+                continue
+            if len(snp['REF']) > 1:
+                pos_end_r = snp['POS'] - 1 + len(snp['REF'])
+                ref = genome[snp['CHROM']][snp['POS'] - 1:pos_end_r]
+            if len(snp['ALT']) > 1:
+                pos_end_a = snp['POS'] - 1 + len(snp['ALT'])
+                ref_alt = genome[snp['CHROM']][snp['POS'] - 1:pos_end_a]
             if snp['REF'] != ref:
-                if snp['ALT'] != ref:
+                if snp['ALT'] != ref_alt:
                     self.warnings['invalid alleles'].append(snp_line)
                     continue
                 snp['ALT'] = snp['REF']
-                snp['REF'] = ref
+                snp['REF'] = ref_alt
 
             vcf_ls.append([snp[field] for field in vcf_fields])
         self.vcf_ls = vcf_ls
