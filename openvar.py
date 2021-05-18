@@ -369,10 +369,12 @@ class OPVReport:
         if 'OP_' in self.opv.annotation:
             with open(annOnePerLine_file_path, 'w') as tab_file:
                 writer = csv.writer(tab_file, delimiter='\t')
+                header_written = False
                 for annOnePerLine_file in self.annOnePerLine_files:
                     for n, row in enumerate(self.parse_annOnePerLine(annOnePerLine_file, as_dict=True)):
-                        if n == 0:
+                        if n == 0 and not header_written:
                             writer.writerow(row.keys())
+                            header_written = True
                         writer.writerow(row.values())
         else:
             copyfile(self.annOnePerLine_files[0], annOnePerLine_file_path)
