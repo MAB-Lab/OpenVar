@@ -648,6 +648,10 @@ class OPVReport:
                 line = dict(zip(keys, ls))
                 if 'ANN[*].EFFECT' in line:
                     line['ANN[*].EFFECT'] = line['ANN[*].EFFECT'].split('&')
+                if 'ANN[*].GENE' in line:
+                    var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT'], line['ANN[*].GENE']])
+                else:
+                    var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT'], 'NA'])
                 var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT'], line['ANN[*].GENE']])
                 eff = (var_name, *[line['ANN[*].' + x] if 'ANN[*].' + x in line else 'NA' for x in fields])
                 if as_dict:
