@@ -414,7 +414,7 @@ class OPVReport:
                 'study_name': self.study_name,
                 'Counts summary': {
                     'Total number of variants': len(snp_set),
-                    'Total number of affected genes': len(gene_snp_rate),
+                    'Total number of affected genes': len(set([x['gene'] for x in gene_snps_grp])),
                     'Total number of affected proteins': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants if snp['ref_prot_acc'] != 'null')),
                 },
                 'Chromosome Level': snps_per_chroms,
@@ -494,7 +494,7 @@ class OPVReport:
 	        'study_name': self.study_name,
             'Counts summary': {
                 'Total number of variants': len(snp_set),
-                'Total number of affected genes': len(gene_snps),
+                'Total number of affected genes': len(set([x['gene'] for x in gene_snps_grp])),
                 'Total number of affected proteins': sum(prot_counts.values()),
                 'Total number of affected reference proteins': prot_counts['ref'],
                 'Total number of affected alternative proteins': prot_counts['alt'],
