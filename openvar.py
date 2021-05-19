@@ -413,7 +413,7 @@ class OPVReport:
             self.summary = {
                 'study_name': self.study_name,
                 'Counts summary': {
-                    'Total number of variants': len(snp_set),
+                    'Total number of variants': len(set(['_'.join(snp['hg38_name'].split('_')[:4]) for snp in self.analyzed_variants])),
                     'Total number of affected genes': len(set([x['gene'] for x in gene_snps_grp])),
                     'Total number of affected proteins': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants if snp['ref_prot_acc'] != 'null')),
                 },
@@ -493,7 +493,7 @@ class OPVReport:
         self.summary = {
 	        'study_name': self.study_name,
             'Counts summary': {
-                'Total number of variants': len(snp_set),
+                'Total number of variants': len(set(['_'.join(snp['hg38_name'].split('_')[:4]) for snp in self.analyzed_variants])),
                 'Total number of affected genes': len(set([x['gene'] for x in gene_snps_grp])),
                 'Total number of affected proteins': sum(prot_counts.values()),
                 'Total number of affected reference proteins': prot_counts['ref'],
