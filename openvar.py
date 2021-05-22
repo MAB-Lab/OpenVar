@@ -398,15 +398,16 @@ class OPVReport:
         snps_per_chroms = Counter([snp.split('_')[0] for snp in snp_set])
         snps_per_chroms = [(chrom, snps_per_chroms[chrom]) for chrom in chrom_names[self.specie]]
 
-        gene_snps_grp = sorted(self.analyzed_variants, key=lambda x: x['gene'])
-        gene_snp_rate = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
-        gene_snp_rate = sorted(gene_snp_rate.items(), key=lambda x: -x[1])
+        snp_gene_list = [x for x in self.analyzed_variants if all(term not in x['effect'] for term in ['upstream_gene_variant', 'downstream_gene_variant', 'intergenic_region'])]
+        gene_snps_grp = sorted(snp_gene_list, key=lambda x: x['gene'])
+        gene_rates = {gene: len(list(grp)) * 1000 / gene_lenghts[gene] for gene, grp in itt.groupby(gene_snps_grp, key=lambda x: x['gene']) if gene in gene_lenghts}
+        gene_rates = sorted(gene_rates.items(), key=lambda x: -x[1])
 
         if all([snp['gene'] == 'null' for snp in self.analyzed_variants]):
-            gene_snp_rate = []
+            gene_rates = []
 
         fname = os.path.join(self.output_dir, '{}_top_genes_var_rate.svg'.format(self.study_name))
-        genes, rates = zip(*gene_snp_rate[:100])  # top 100
+        genes, rates = zip(*gene_rates[:100])  # top 100
         self.generate_bar_chart([genes, rates], 'gene_var_rate', fname)
 
         if write_summary_pkl:
@@ -414,17 +415,17 @@ class OPVReport:
                 'study_name': self.study_name,
                 'Counts summary': {
                     'Total number of variants': len(set(['_'.join(snp['hg38_name'].split('_')[:4]) for snp in self.analyzed_variants])),
-                    'Total number of affected genes': len(set([x['gene'] for x in gene_snps_grp])),
+                    'Total number of affected genes': len(set([x['gene'] for x in snp_gene_list])),
                     'Total number of affected proteins': len(set(snp['ref_prot_acc'] for snp in self.analyzed_variants if snp['ref_prot_acc'] != 'null')),
                 },
                 'Chromosome Level': snps_per_chroms,
-                'Gene Level': gene_snp_rate,
+                'Gene Level': gene_rates,
             }
             fname = os.path.join(self.output_dir, 'summary.pkl')
             pickle.dump(self.summary, open(fname, 'wb'))
 
         else:
-            return snps_per_chroms, gene_snp_rate
+            return snps_per_chroms, gene_rates
 
     def compute_summary_stats(self):
         # overall summary
@@ -436,7 +437,8 @@ class OPVReport:
         }
 
         # chrom level & gene level
-        snps_per_chroms, gene_snp_rate = self.compute_chrom_gene_level_stats()
+        snp_gene_list = [x for x in self.analyzed_variants if all(term not in x['effect'] for term in ['upstream_gene_variant', 'downstream_gene_variant', 'intergenic_region'])]
+        snps_per_chroms, gene_rates = self.compute_chrom_gene_level_stats()
 
         # protein level
         if len(self.analyzed_variants) == len([x for x in self.analyzed_variants if x['gene'] == 'null']):
@@ -494,14 +496,14 @@ class OPVReport:
 	        'study_name': self.study_name,
             'Counts summary': {
                 'Total number of variants': len(set(['_'.join(snp['hg38_name'].split('_')[:4]) for snp in self.analyzed_variants])),
-                'Total number of affected genes': len(set([x['gene'] for x in gene_snps_grp])),
+                'Total number of affected genes': len(set([x['gene'] for x in snp_gene_list])),
                 'Total number of affected proteins': sum(prot_counts.values()),
                 'Total number of affected reference proteins': prot_counts['ref'],
                 'Total number of affected alternative proteins': prot_counts['alt'],
                 'Total number of affected novel isoforms': prot_counts['iso'],
             },
             'Chromosome Level': snps_per_chroms,
-            'Gene Level': gene_snp_rate,
+            'Gene Level': gene_rates,
             'Protein Level': {
                 'Number of variants with highest impact on reference proteins': count_highest['ref'],
                 'Number of variants with highest impact on alternative proteins': count_highest['alt'],
@@ -638,7 +640,7 @@ class OPVReport:
         return annOnePerLine_files
 
     def parse_annOnePerLine(self, annOnePerLine_file, as_dict=False):
-        fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE']
+        fields = ['FEATUREID', 'HGVS_P', 'HGVS_C', 'IMPACT', 'ERRORS', 'GENE', 'EFFECT']
         with open(annOnePerLine_file, 'r') as f:
             for n, l in enumerate(f):
                 ls = l.strip().split('\t')
@@ -651,7 +653,7 @@ class OPVReport:
                 if 'ANN[*].GENE' in line:
                     var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT'], line['ANN[*].GENE']])
                 else:
-                    var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT'], 'NA'])
+                    var_name = '_'.join([line['CHROM'], line['POS'], line['REF'], line['ALT'], 'Unknown'])
                 eff = (var_name, *[line['ANN[*].' + x] if 'ANN[*].' + x in line else 'NA' for x in fields])
                 if as_dict:
                     yield line
@@ -675,7 +677,8 @@ class OPVReport:
             'alt_hgvs_c': 'null',
             'ref_errs': 'null',
             'alt_errs': 'null',
-            'gene': 'null'
+            'gene': 'null',
+            'effect': 'null'
         }
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
@@ -696,6 +699,7 @@ class OPVReport:
                         'ref_hgvs_c': hgvs_c,
                         'ref_errs': errs,
                         'ref_max_impact': impact_levels[impact],
+                        'effect': effect
                     })
             elif '^' in feat_id:
                 atts['in_alt'] = 'true'
@@ -708,6 +712,7 @@ class OPVReport:
                         'alt_hgvs_c': hgvs_c,
                         'alt_errs': errs,
                         'alt_max_impact': impact_levels[impact],
+                        'effect': effect
                     })
         atts.update({
             'hg38_pos': int(variant.split('_')[1]),
