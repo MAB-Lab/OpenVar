@@ -44,12 +44,21 @@ accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = {
         'hg19': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
         'b37': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
-        'hg38': ['CHROM', 'POS', 'ID', 'REF', 'ALT']
+        'hg38': ['CHROM', 'POS', 'ID', 'REF', 'ALT'],
+        'mm39': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
+        'mm10': ['CHROM', 'POS', 'ID', 'REF', 'ALT'],
+        'rn7': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
+        'rn6': ['CHROM', 'POS', 'ID', 'REF', 'ALT'],
+        'dm3': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
+        'dm6': ['CHROM', 'POS', 'ID', 'REF', 'ALT'],
         }
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {
         'hg19': ('/open-var-deposit/picard/chain_files/hg19ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38'), 
-        'b37': ('/open-var-deposit/picard/chain_files/b37ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38')
+        'b37': ('/open-var-deposit/picard/chain_files/b37ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38'),
+        'mm39': ('/open-var-deposit/picard/chain_files/mm39ToMm10.over.chain', '/open-var-deposit/picard/ref_genome/mm10.fa', 'mm10'),
+        'rn7': ('/open-var-deposit/picard/chain_files/rn7ToRn6.over.chain', '/open-var-deposit/picard/ref_genome/rn6.fa', 'rn6'),
+        'dm3': ('/open-var-deposit/picard/chain_files/dm3ToDm6.over.chain', '/open-var-deposit/picard/ref_genome/dm6.fa', 'dm6')
         }
 annotation_build = {
     ('human', 'OP_Ensembl'): 'GRCh38.95_refAlt_chr{chrom_name}',
