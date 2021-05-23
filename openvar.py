@@ -199,15 +199,20 @@ class SeqStudy:
         self.genome_version = genome_old_versions[self.genome_version][2]
 
     def check_lifted(self):
-        lifted_vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
-        for snp in self.vcf_ls:
-            snp_line = to_tsv_line(snp)
-            snp = dict(zip(lifted_vcf_fields, snp))
-            snp['CHROM'] = snp['CHROM'].replace('chr', '')
         if len(self.vcf_ls) == 0:
             self.lift_check = False
+            return self.lift_check
         else:
+            vcf_ls = []
+            lifted_vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+            for snp in self.vcf_ls:
+                snp_line = to_tsv_line(snp)
+                snp = dict(zip(lifted_vcf_fields, snp))
+                snp['CHROM'] = snp['CHROM'].replace('chr', '')
+            vcf_ls.append([snp[field] for field in vcf_fields[self.genome_version]])
+            self.vcf_ls = vcf_ls
             self.lift_check = True
+            return self.lift_check
 
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
