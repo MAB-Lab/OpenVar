@@ -720,7 +720,7 @@ class OPVReport:
             'effect': 'null'
         }
         for eff in effs:
-            feat_id, hgvs_p, hgvs_c, impact, errs, gene = eff[1:]
+            feat_id, hgvs_p, hgvs_c, impact, errs, gene, effect = eff[1:]
             if feat_id_is_ref(feat_id):
                 atts['in_ref'] = 'true'
                 if impact_levels[impact] > atts['ref_max_impact']:
