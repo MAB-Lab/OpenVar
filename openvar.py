@@ -86,8 +86,8 @@ class SeqStudy:
                 self.lift_check = False
                 self.LiftoverVcf(picard_path)
                 self.check_lifted()
-            #self.check_altref_order()
-            #print('vcf altref allele check')
+            self.check_altref_order()
+            print('vcf altref allele check')
             self.write_warnings()
             print('vcf warnings written')
             if 'OP' in self.annotation: # split vcf by chrom if using OP annoations
@@ -209,6 +209,7 @@ class SeqStudy:
                 snp_line = to_tsv_line(snp)
                 snp = dict(zip(lifted_vcf_fields, snp))
                 snp['CHROM'] = snp['CHROM'].replace('chr', '')
+                snp['POS'] = int(snp['POS'])
             vcf_ls.append([snp[field] for field in vcf_fields[self.genome_version]])
             self.vcf_ls = vcf_ls
             self.lift_check = True
