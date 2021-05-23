@@ -192,7 +192,7 @@ class SeqStudy:
         lift_subproc = subprocess.Popen(lift_cmd.split(), shell=False)
         lift_subproc.wait()
 
-        self.vcf_ls = parse_vcf(os.path.join(self.output_dir, 'lifted_vcf.vcf'))
+        self.vcf_ls = parse_lift(os.path.join(self.output_dir, 'lifted_vcf.vcf'))
 
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
@@ -799,3 +799,13 @@ def validate_allele_format(allele):
             if nt.lower() not in accepted_bases:
                 return False
     return True
+
+def parse_lift(file_path):
+    vcf_ls = []
+    with open(file_path, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        for n, row in enumerate(reader):
+            if row:
+                vcf_ls.append(row)
+    vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
+    return vcf_ls
