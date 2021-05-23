@@ -193,6 +193,7 @@ class SeqStudy:
         lift_subproc.wait()
 
         self.vcf_ls = parse_lift(os.path.join(self.output_dir, 'lifted_vcf.vcf'))
+        self.genome_version = genome_old_versions[self.genome_version][1]
 
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
