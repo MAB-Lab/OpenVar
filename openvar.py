@@ -153,7 +153,7 @@ class SeqStudy:
         genome = pyfaidx.Fasta(genome_fastas[self.specie], as_raw=True, rebuild=False)
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
-            snp = dict(zip(vcf_fields, snp))
+            snp = dict(zip(vcf_fields[self.genome_version], snp))
             ref = genome[snp['CHROM']][snp['POS'] - 1]
             ref_alt = ref
             if (',' in snp['ALT']) or (',' in snp['REF']):
@@ -172,7 +172,7 @@ class SeqStudy:
                 snp['ALT'] = snp['REF']
                 snp['REF'] = ref_alt
 
-            vcf_ls.append([snp[field] for field in vcf_fields])
+            vcf_ls.append([snp[field] for field in vcf_fields[self.genome_version]])
         self.vcf_ls = vcf_ls
 
     def LiftoverVcf(self, picard_path):
