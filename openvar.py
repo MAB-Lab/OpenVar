@@ -48,8 +48,8 @@ vcf_fields = {
         }
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {
-        'hg19': ('/open-var-deposit/picard/chain_files/hg19ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa'), 
-        'b37': ('/open-var-deposit/picard/chain_files/b37ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa')
+        'hg19': ('/open-var-deposit/picard/chain_files/hg19ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38'), 
+        'b37': ('/open-var-deposit/picard/chain_files/b37ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38')
         }
 annotation_build = {
     ('human', 'OP_Ensembl'): 'GRCh38.95_refAlt_chr{chrom_name}',
@@ -196,7 +196,7 @@ class SeqStudy:
         lift_subproc.wait()
 
         self.vcf_ls = parse_lift(os.path.join(self.output_dir, 'lifted_vcf.vcf'))
-        self.genome_version = genome_old_versions[self.genome_version][1]
+        self.genome_version = genome_old_versions[self.genome_version][2]
 
     def check_lifted(self):
         count = 0
