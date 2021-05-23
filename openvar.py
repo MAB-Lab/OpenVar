@@ -806,6 +806,8 @@ def parse_lift(file_path):
         reader = csv.reader(f, delimiter='\t')
         for n, row in enumerate(reader):
             if row:
+                if row[0].startswith('##'):
+                    continue
                 vcf_ls.append(row)
     vcf_ls = sorted(vcf_ls, key=lambda x: x[0])
     return vcf_ls
