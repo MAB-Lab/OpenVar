@@ -86,8 +86,8 @@ class SeqStudy:
                 self.lift_check = False
                 self.LiftoverVcf(picard_path)
                 self.check_lifted()
-            self.check_altref_order()
-            print('vcf altref allele check')
+            #self.check_altref_order()
+            #print('vcf altref allele check')
             self.write_warnings()
             print('vcf warnings written')
             if 'OP' in self.annotation: # split vcf by chrom if using OP annoations
