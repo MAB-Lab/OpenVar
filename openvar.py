@@ -41,7 +41,11 @@ chrom_names = {
 chrom_set = {sp:set(chrom_names[sp]) for sp in chrom_names}
 
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
-vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
+vcf_fields = {
+        'hg19': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
+        'b37': ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'],
+        'hg38': ['CHROM', 'POS', 'ID', 'REF', 'ALT']
+        }
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {
         'hg19': ('/open-var-deposit/picard/chain_files/hg19ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa'), 
@@ -71,7 +75,7 @@ class SeqStudy:
         self.output_dir = mkdir(os.path.join(self.results_dir, 'output'))
         self.file_path = os.path.join(data_dir, file_name)
         self.warnings = {'unknown chromosomes': [], 'invalid positions': [], 'invalid alleles': []}
-        self.file_check = True
+        self.file_check = None
         self.parse_vcf()
         print('vcf parsed')
         self.check_vcf_format()
@@ -102,9 +106,19 @@ class SeqStudy:
 
     def check_vcf_format(self):
         vcf_ls = []
+
+        #Check vcf format for LiftoverVcf
+        if self.genome_version in genome_old_versions:
+            if not any('##fileformat=VCF' in line for line in [item for sublist in self.vcf_ls for item in sublist]):
+                self.file_check = False
+                return self.file_check
+            if not ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'] in self.vcf_ls:
+                self.file_check = False
+                return self.file_check
+
         for snp in self.vcf_ls:
             snp_line = to_tsv_line(snp)
-            snp = dict(zip(vcf_fields, snp))
+            snp = dict(zip(vcf_fields[self.genome_version], snp))
 
             # check chromosome names
             if snp['CHROM'].replace('chr', '') not in chrom_set[self.specie]:
@@ -124,12 +138,15 @@ class SeqStudy:
                 self.warnings['invalid alleles'].append(snp_line)
                 continue
 
-            vcf_ls.append([snp[field] for field in vcf_fields])
+            vcf_ls.append([snp[field] for field in vcf_fields[self.genome_version]])
 
         if not vcf_ls:
             self.file_check = False
+        else:
+            self.file_check = True
 
         self.vcf_ls = vcf_ls
+        return self.file_check
 
     def check_altref_order(self):
         vcf_ls = []
