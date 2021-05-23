@@ -43,7 +43,10 @@ chrom_set = {sp:set(chrom_names[sp]) for sp in chrom_names}
 accepted_bases = {'a', 'c', 'g', 't', 'n', '*'}
 vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT']
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
-genome_old_versions = {'hg19': 'hg38', }
+genome_old_versions = {
+        'hg19': ('/open-var-deposit/picard/chain_files/hg19ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa'), 
+        'b37': ('/open-var-deposit/picard/chain_files/b37ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa')
+        }
 annotation_build = {
     ('human', 'OP_Ensembl'): 'GRCh38.95_refAlt_chr{chrom_name}',
     ('human', 'OP_RefSeq'): 'GRCh38.p12_chr{chrom_name}',
@@ -56,7 +59,7 @@ annotation_build = {
 }
 
 class SeqStudy:
-    def __init__(self, data_dir, file_name, study_name, results_dir, specie, genome_version, annotation, verbose=False):
+    def __init__(self, data_dir, file_name, study_name, results_dir, specie, genome_version, annotation, picard_path, verbose=False):
         self.verbose = verbose
         self.specie = specie
         self.genome_version = genome_version
@@ -75,7 +78,7 @@ class SeqStudy:
         if self.file_check:
             print('vcf format checked')
             if genome_version in genome_old_versions:
-                self.convert_hg19_to_hg38()  # TODO change function to "convert_genome(old_version)"
+                self.LiftoverVcf(picard_path)
             self.check_altref_order()
             print('vcf altref allele check')
             self.write_warnings()
@@ -154,6 +157,25 @@ class SeqStudy:
 
             vcf_ls.append([snp[field] for field in vcf_fields])
         self.vcf_ls = vcf_ls
+
+    def LiftoverVcf(self, picard_path):
+        lift_cmd = 'java -jar {picard_path}build/libs/picard.jar LiftoverVcf -I {input_vcf} -O {output_vcf} -C {chain_file} --REJECT {rejected_variants} -R {ref_genome} --WRITE_ORIGINAL_POSITION --RECOVER_SWAPPED_REF_ALT'.format(
+                picard_path = picard_path, 
+                input_vcf = self.file_path, 
+                output_vcf = os.path.join(self.output_dir, 'lifted_vcf.vcf'), 
+                chain_file = genome_old_versions[self.genome_version][0], 
+                rejected_variants = os.path.join(self.output_dir, 'rejected_at_liftover.vcf'), 
+                ref_genome = genome_old_versions[self.genome_version][1]
+                )
+
+        if self.verbose:
+            print('Running LiftoverVcf...')
+            print(lift_cmd)
+
+        lift_subproc = subprocess.Popen(lift_cmd.split(), shell=False)
+        lift_subproc.wait()
+
+        self.vcf_ls = parse_vcf(os.path.join(self.output_dir, 'lifted_vcf.vcf'))
 
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
