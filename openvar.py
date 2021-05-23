@@ -76,13 +76,16 @@ class SeqStudy:
         self.file_path = os.path.join(data_dir, file_name)
         self.warnings = {'unknown chromosomes': [], 'invalid positions': [], 'invalid alleles': []}
         self.file_check = None
+        self.lift_check = True
         self.parse_vcf()
         print('vcf parsed')
         self.check_vcf_format()
         if self.file_check:
             print('vcf format checked')
             if genome_version in genome_old_versions:
+                self.lift_check = False
                 self.LiftoverVcf(picard_path)
+                self.check_lifted()
             self.check_altref_order()
             print('vcf altref allele check')
             self.write_warnings()
@@ -194,6 +197,18 @@ class SeqStudy:
 
         self.vcf_ls = parse_lift(os.path.join(self.output_dir, 'lifted_vcf.vcf'))
         self.genome_version = genome_old_versions[self.genome_version][1]
+
+    def check_lifted(self):
+        count = 0
+        with open(os.path.join(self.output_dir, 'lifted_vcf.vcf'), 'r') as f:
+            for line in f:
+                if line.startswith('#'):
+                    continue
+                count += 1
+        if count == 0:
+            self.lift_check = False
+        else:
+            self.lift_check = True
 
     def convert_hg19_to_hg38(self):
         lo_hg38 = LiftOver('hg19', 'hg38')
