@@ -199,13 +199,12 @@ class SeqStudy:
         self.genome_version = genome_old_versions[self.genome_version][2]
 
     def check_lifted(self):
-        count = 0
-        with open(os.path.join(self.output_dir, 'lifted_vcf.vcf'), 'r') as f:
-            for line in f:
-                if line.startswith('#'):
-                    continue
-                count += 1
-        if count == 0:
+        lifted_vcf_fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+        for snp in self.vcf_ls:
+            snp_line = to_tsv_line(snp)
+            snp = dict(zip(lifted_vcf_fields, snp))
+            snp['CHROM'] = snp['CHROM'].replace('chr', '')
+        if len(self.vcf_ls) == 0:
             self.lift_check = False
         else:
             self.lift_check = True
