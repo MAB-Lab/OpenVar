@@ -687,7 +687,10 @@ class OPVReport:
                 print(annOnePerLine_file)
             snp_effs = self.parse_annOnePerLine(annOnePerLine_file)
             for snp_eff in itt.groupby(sorted(snp_effs, key=lambda x: x[0]), key=lambda x: x[0]):
-                analyzed_variants.append(self.analyze_variant(*snp_eff))
+                ann_snp = self.analyze_variant(*snp_eff)
+                if any('MULTIPLE_STOP' in ann_snp[x] for x in ['ref_errs', 'alt_errs']):
+                    continue
+                analyzed_variants.append(ann_snp)
 
         if all([snp['gene'] == 'null' for snp in analyzed_variants]):
             print('All genes are null!')
@@ -751,8 +754,6 @@ class OPVReport:
         }
         for eff in effs:
             feat_id, hgvs_p, hgvs_c, impact, errs, gene, effect = eff[1:]
-            if 'MULTIPLE_STOP' in errs:
-                continue
             if feat_id_is_ref(feat_id):
                 atts['in_ref'] = 'true'
                 if impact_levels[impact] > atts['ref_max_impact']:
