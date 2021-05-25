@@ -219,7 +219,7 @@ class SeqStudy:
                 snp = dict(zip(lifted_vcf_fields, snp))
                 snp['CHROM'] = snp['CHROM'].replace('chr', '')
                 snp['POS'] = int(snp['POS'])
-            vcf_ls.append([snp[field] for field in vcf_fields[self.genome_version]])
+                vcf_ls.append([snp[field] for field in vcf_fields[self.genome_version]])
             self.vcf_ls = vcf_ls
             self.lift_check = True
             return self.lift_check
