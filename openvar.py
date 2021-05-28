@@ -124,7 +124,7 @@ class SeqStudy:
             if not any('##fileformat=VCF' in line for line in [item for sublist in self.vcf_ls for item in sublist]):
                 self.file_check = False
                 return self.file_check
-            if not ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'] in self.vcf_ls:
+            if not ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'] in [x[:8] for x in self.vcf_ls]:
                 self.file_check = False
                 return self.file_check
 
