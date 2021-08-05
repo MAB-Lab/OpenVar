@@ -54,6 +54,6 @@ To load the pickle object, simply run the following command:
     <code>import pickle
   summary_path = 'path/to/summary/pickle'
   pickle.load(open(summary_path, 'rb'))
-  
+
 
 If you have any question regarding OpenVar, don't hesitate to contact us: https://openprot.org/p/ng/contactUs
