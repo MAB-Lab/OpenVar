@@ -300,7 +300,7 @@ class OpenVar:
     def run_snpeff_parallel_pipe(self):
         with ThreadPoolExecutor(max_workers = 4) as executor:
             for output in executor.map(self.run_snpeff_chromosome, chrom_names[self.specie]):
-                if (result == False) or (results == None):
+                if (output == False) or (output == None):
                     return False
         return True
 
