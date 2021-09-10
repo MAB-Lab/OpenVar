@@ -13,6 +13,7 @@ from shutil import copyfile
 from collections import Counter
 from matplotlib import pyplot as plt
 from pyliftover import LiftOver
+from concurrent.futures import ThreadPoolExecutor
 
 maxInt = sys.maxsize
 while True:
@@ -296,20 +297,26 @@ class OpenVar:
         self.logs_dir = mkdir(os.path.join(self.vcf.results_dir, 'logs'))
         self.output_dir = self.vcf.output_dir
 
-    def run_snpeff_parallel_pipe(self, nprocs=12):
-        workers = [ Worker(self.run_snpeff_chromosome, chrom_name) for chrom_name in chrom_names[self.specie] ]
-        
-        for w in workers:
-            w.thread.start()
-
-        for w in workers:
-            w.thread.join()
-
-        for w in workers:
-            if w.result is None or w.result is False:
-                return False
-
+    def run_snpeff_parallel_pipe(self):
+        with ThreadPoolExecutor(max_workers = 4) as executor:
+            for output in executor.map(self.run_snpeff_chromosome, chrom_names[self.specie]):
+                if (result == False) or (results == None):
+                    return False
         return True
+
+        #workers = [ Worker(self.run_snpeff_chromosome, chrom_name) for chrom_name in chrom_names[self.specie] ]
+        
+        #for w in workers:
+        #    w.thread.start()
+
+        #for w in workers:
+        #    w.thread.join()
+
+        #for w in workers:
+        #    if w.result is None or w.result is False:
+        #        return False
+
+        #return True
 
     def run_snpeff_chromosome(self, chrom_name):
         snpEff_chrom_build = self.snpeff_build.format(chrom_name=chrom_name)
