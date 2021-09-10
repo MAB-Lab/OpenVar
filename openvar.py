@@ -23,14 +23,14 @@ while True:
         maxInt = int(maxInt / 10)
 csv.field_size_limit(sys.maxsize)
 gene_len_files = {
-    ('human', 'Ensembl'): '/human/gene_lenghts_ensembl.pkl',
-    ('mouse', 'Ensembl'): '/mouse/gene_lenghts_ensembl.pkl',
-    ('human', 'RefSeq'): '/human/gene_lenghts_refseq.pkl',
-    ('mouse', 'RefSeq'): '/mouse/gene_lenghts_refseq.pkl',
+    ('human', 'Ensembl'): '/open-var-deposit/data/human/gene_lenghts_ensembl.pkl',
+    ('mouse', 'Ensembl'): '/open-var-deposit/data/mouse/gene_lenghts_ensembl.pkl',
+    ('human', 'RefSeq'): '/open-var-deposit/data/human/gene_lenghts_refseq.pkl',
+    ('mouse', 'RefSeq'): '/open-var-deposit/data/mouse/gene_lenghts_refseq.pkl',
 }
 genome_fastas = {
-    'human': '/human/GRCh38/complete-genome.fa',
-    'mouse': '/mouse/GRCm38/complete-genome.fa',
+    'human': '/shared-genomes-folder/human/GRCh38/complete-genome.fa',
+    'mouse': '/shared-genomes-folder/mouse/GRCm38/complete-genome.fa',
     'rat': '',
     'fruit fly': '',
 }
@@ -54,11 +54,11 @@ vcf_fields = {
         }
 impact_levels = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'MODIFIER': 0, 1: 'LOW', 2: 'MODERATE', 3: 'HIGH', 0: 'MODIFIER'}
 genome_old_versions = {
-        'hg19': ('/picard/chain_files/hg19ToHg38.over.chain', '/picard/ref_genome/hg38.fa', 'hg38'), 
-        'b37': ('/picard/chain_files/b37ToHg38.over.chain', '/picard/ref_genome/hg38.fa', 'hg38'),
-        'mm39': ('/picard/chain_files/mm39ToMm10.over.chain', '/picard/ref_genome/mm10.fa', 'mm10'),
-        'rn7': ('/picard/chain_files/rn7ToRn6.over.chain', '/picard/ref_genome/rn6.fa', 'rn6'),
-        'dm3': ('/picard/chain_files/dm3ToDm6.over.chain', '/picard/ref_genome/dm6.fa', 'dm6')
+        'hg19': ('/open-var-deposit/picard/chain_files/hg19ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38'), 
+        'b37': ('/open-var-deposit/picard/chain_files/b37ToHg38.over.chain', '/open-var-deposit/picard/ref_genome/hg38.fa', 'hg38'),
+        'mm39': ('/open-var-deposit/picard/chain_files/mm39ToMm10.over.chain', '/open-var-deposit/picard/ref_genome/mm10.fa', 'mm10'),
+        'rn7': ('/open-var-deposit/picard/chain_files/rn7ToRn6.over.chain', '/open-var-deposit/picard/ref_genome/rn6.fa', 'rn6'),
+        'dm3': ('/open-var-deposit/picard/chain_files/dm3ToDm6.over.chain', '/open-var-deposit/picard/ref_genome/dm6.fa', 'dm6')
         }
 annotation_build = {
     ('human', 'OP_Ensembl'): 'GRCh38.95_refAlt_chr{chrom_name}',
