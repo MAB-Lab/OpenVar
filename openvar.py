@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import json
+import psutil
 import pathlib
 import pickle
 import pyfaidx
@@ -339,6 +340,7 @@ class OpenVar:
             print('Running SnpEff...')
             print(snpeff_cmd)
 
+        psutil.Process().nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
         snpeff_subproc = subprocess.Popen(
             snpeff_cmd.split(),
             shell=False,
