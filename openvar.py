@@ -340,7 +340,7 @@ class OpenVar:
             print('Running SnpEff...')
             print(snpeff_cmd)
 
-        psutil.Process().nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+        psutil.Process().nice(0x00004000)
         snpeff_subproc = subprocess.Popen(
             snpeff_cmd.split(),
             shell=False,
